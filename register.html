@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רישום משתמש חדש</title>
+    <link rel="stylesheet" href="style.css">
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <div>שלום, אורח</div>
+    <div class="nav-links">
+        <a href="index.html">חזור לדף הבית</a>
+    </div>
+</div>
+
+<div class="auth-box">
+    <h2>רישום סטודנט חדש</h2>
+
+    <form id="registerForm" onsubmit="handleRegister(event)">
+        <label>שם משתמש :</label>
+        <input type="text" id="user_name" required>
+
+        <label>מייל:</label>
+        <input type="text" id="mail" required>
+
+        <label>מסלול לימודים:</label>
+        <select id="program_id" required>
+            <option value="">בחר מסלול</option>
+            <option value="1">הנדסת תעשייה וניהול</option>
+            <option value="2">הנדסת תוכנה</option>
+            <option value="3">מערכות מידע</option>
+        </select>
+
+        <label>שנת לימוד:</label>
+        <select id="study_year" required>
+            <option value="">בחר שנת לימוד</option>
+            <option value="1">שנה ג'</option>
+            <option value="2">שנה ד'</option>
+            <option value="2">אחר</option>
+        </select>
+
+        <label>סיסמה:</label>
+        <input type="password" id="password" required>
+
+        <button type="submit" class="main-btn">בצע רישום</button>
+    </form>
+</div>
+
+<footer class="site-footer">
+    <p><strong>©  מוגש על ידי אופק נתנאל, אור כהן, רותם ברק, מידן מינצס</strong></p>
+</footer>
+
+<script>
+    async function handleRegister(event) {
+        event.preventDefault();
+
+        const user_name = document.getElementById('user_name').value;
+        const national_id = document.getElementById('national_id').value;
+        const program_id = parseInt(document.getElementById('program_id').value);
+        const study_year = parseInt(document.getElementById('study_year').value);
+        const password = document.getElementById('password').value;
+
+        try {
+            // הרישום מתבצע בשרת (מזהה חדש + שמירה), כך שהדפדפן לא ניגש לטבלת הסטודנטים
+            const newStudent = {
+                user_name: user_name,
+                national_id: national_id,
+                program_id: program_id,
+                study_year: study_year,
+                password: password
+            };
+
+            const response = await fetch(`${API_BASE}/api/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newStudent)
+            });
+            const result = await response.json();
+            const data = result.success ? result : null;
+            const error = result.success ? null : { message: result.error || 'שגיאה לא ידועה' };
+
+            if (error) {
+                console.error('Error inserting:', error);
+                // הודעת שגיאה מעוצבת
+                Swal.fire({
+                    icon: 'error',
+                    title: 'שגיאה',
+                    text: 'שגיאה ברישום: ' + error.message,
+                });
+            } else {
+                console.log('Success:', data);
+                
+                // --- כאן נמצא התיקון שביקשת (SweetAlert2) ---
+                Swal.fire({
+                    title: 'הרישום בוצע בהצלחה!',
+                    text: `המשתמש ${user_name} נוסף למערכת`,
+                    icon: 'success',
+                    confirmButtonText: 'מעבר לדף התחברות',
+                    confirmButtonColor: '#3085d6'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+
+        } catch (err) {
+            console.error('Unexpected error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'שגיאה',
+                text: 'אירעה תקלה בתהליך הרישום: ' + err.message,
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

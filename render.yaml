@@ -1,0 +1,23 @@
+# Render Blueprint: free web service running the chat server (chat.py).
+# Render -> New -> Blueprint -> pick this repo. SUPABASE_URL and SUPABASE_KEY are asked for once.
+services:
+  - type: web
+    name: course-scheduler-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn chat:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: USE_GEMINI
+        value: "false"
+      - key: ML_SAVE_PLOTS
+        value: "false"
+      - key: MPLBACKEND
+        value: Agg

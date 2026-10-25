@@ -1,0 +1,10 @@
+# Local extras on top of the server requirements.
+-r requirements.txt
+
+# Optional: Gemini parsing for messages the local parser does not recognize (USE_GEMINI=true)
+google-genai
+
+# Analysis / visualization tools
+scipy
+statsmodels
+seaborn

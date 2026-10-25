@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסה למערכת</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="config.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <div>שלום, אורח</div>
+    <div class="nav-links">
+        <a href="index.html">חזור לדף הבית</a>
+    </div>
+</div>
+
+<div class="auth-box">
+    <h2>כניסה למערכת</h2>
+    
+    <div id="login-error" class="error-msg" style="display: none; color: red; margin-bottom: 15px; font-weight: bold;">
+        טעות במשתמש או בסיסמא
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+        <label>שם משתמש:</label>
+        <input type="text" id="login-username" required>
+
+        <label>סיסמה:</label>
+        <input type="password" id="login-pass" required>
+
+        <button type="submit" class="main-btn">התחבר</button>
+        
+        <a href="forgot_password.html" style="display: block; text-align: center; color: var(--accent); text-decoration: none; font-size: 0.9rem; margin-top: 15px; transition: color 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--accent)'">שכחת סיסמה?</a>
+
+        <p style="text-align: center; font-size: 0.85rem; margin-top: 15px; opacity: 0.8;">
+            רוצים רק לנסות? משתמש לדוגמה: <strong>noa.cohen0001</strong> | סיסמה: <strong>demo1234</strong><br>
+            ההתחברות הראשונה עשויה לקחת עד דקה, בזמן שהשרת מתעורר.
+        </p>
+    </form>
+</div>
+
+<footer class="site-footer">
+    <p><strong>© מוגש על ידי אופק נתנאל, אור כהן, רותם ברק, מידן מינצס</strong></p>
+</footer>
+
+<script>
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const usernameField = document.getElementById('login-username');
+        const passField = document.getElementById('login-pass');
+        const errorMsg = document.getElementById('login-error');
+
+        // איפוס שגיאות
+        errorMsg.style.display = 'none';
+
+        const finalUsername = usernameField.value.trim();
+        const finalPass = passField.value.trim();
+
+        try {
+            // הסיסמה נבדקת בשרת, כך שהדפדפן לא ניגש לטבלת הסטודנטים
+            const response = await fetch(`${API_BASE}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_name: finalUsername, password: finalPass })
+            });
+            const data = response.ok ? await response.json() : null;
+            const error = response.ok ? null : response.status;
+
+            if (error) {
+                console.error("שגיאה בהתחברות:", error);
+                errorMsg.textContent = "שם משתמש או סיסמה שגויים";
+                errorMsg.style.display = 'block';
+
+            } else if (data) {
+                console.log("התחברות מוצלחת!", data);
+                
+                // שמירת השם המלא מהעמודה הנכונה ב-DB
+                localStorage.setItem('currentUser', JSON.stringify({
+                    id: data.student_id,      // מזהה הסטודנט
+                    name: data.user_name,     // השם המלא כפי שמופיע בטבלה
+                    program_id: data.program_id // (אופציונלי) אם תרצה להשתמש בזה בהמשך
+                }));
+                
+                window.location.href = 'dashboard.html'; 
+            }
+        } catch (err) {
+            console.error("שגיאה קריטית בקוד:", err);
+            errorMsg.style.display = 'block';
+            errorMsg.textContent = "שגיאה בחיבור לשרת";
+        }
+    }
+</script>
+</body>
+</html>

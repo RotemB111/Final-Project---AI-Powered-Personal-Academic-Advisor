@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת המלצה</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="config.js"></script>
+</head>
+<body>
+
+<div class="navbar" style="position: relative;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <button onclick="document.getElementById('history-sidebar').style.right = '0';" style="background: none; border: none; font-size: 28px; cursor: pointer; color: white; padding: 0; line-height: 1; transition: 0.2s;" onmouseover="this.style.color='#a7f3d0'" onmouseout="this.style.color='white'">
+            ☰
+        </button>
+        <div style="font-size: 16px;">
+            שלום, <span id="student-greeting" style="font-weight: bold;">טוען נתונים...</span>
+        </div>
+    </div>
+
+    <div style="position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: bold; white-space: nowrap;">
+        Easy Schedule - מערכת המלצה אקדמית חכמה
+    </div>
+
+    <div class="nav-links" style="z-index: 2; display: flex; gap: 15px; align-items: center;">
+    <a href="profile.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; font-size: 16px; padding: 6px 12px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.15)'" onmouseout="this.style.backgroundColor='transparent'">
+        אזור אישי 
+    </a>
+    <a href="#" onclick="handleLogout()" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; font-size: 16px; padding: 6px 12px; border-radius: 8px; transition: 0.2s;" onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 0.15)'" onmouseout="this.style.backgroundColor='transparent'">
+        יציאה
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="8 17 3 12 8 7"></polyline>
+            <line x1="3" y1="12" x2="15" y2="12"></line>
+        </svg>
+    </a>
+</div>
+</div>
+<div class="main-container">
+
+    <div id="chat-section" class="chat-container full-screen" style="background-color: #ffffff;">
+    <div class="chat-inner-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+        
+        <div style="position: relative; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center;">
+            <button id="expand-chat-btn" onclick="toggleChatFullScreen()" style="display: none; position: absolute; left: 0; top: 0; background: #ffffff; color: var(--primary-green); border: 1px solid #e2e8f0; border-radius: 8px; width: 36px; height: 36px; font-size: 18px; cursor: pointer; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.03);" title="הגדל למסך מלא" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+    ⛶
+</button>
+
+            <h3 style="margin: 0 0 10px 0; color: var(--text-main); font-size: 16px; font-weight: bold;">בחר סמסטר</h3>
+
+            <div class="semester-buttons-group" style="display: flex; gap: 5px; justify-content: center; background: #ffffff; padding: 5px; border-radius: 12px; border: 1px solid #e2e8f0; width: fit-content;">
+                <button class="semester-btn active" onclick="setSemester('א', this)" style="border: none; margin: 0; padding: 10px 24px;">סמסטר א'</button>
+                <button class="semester-btn" onclick="setSemester('ב', this)" style="border: none; margin: 0; padding: 10px 24px;">סמסטר ב'</button>
+                <button class="semester-btn" onclick="setSemester('קיץ', this)" style="border: none; margin: 0; padding: 10px 24px;">סמסטר קיץ</button>
+            </div>
+        </div>           
+            <div id="chat-history" class="chat-history">
+                <div class="message system-message" style="background:#e3f2fd; padding:10px; border-radius:8px;">
+                   שלום אני צ'אמפר הצ'אט בוט האישי שלך  <br>
+                    מתי אתה מעדיף ללמוד? האם יש ימים שאתה עובד בהם?
+                </div>
+            </div>
+
+            <div class="chat-input-area" style="display: flex; gap: 12px; align-items: center; background: #ffffff; padding: 8px 12px; border-radius: 16px; border: 1px solid #e2e8f0; margin-top: auto;">
+                <textarea id="user-input" placeholder="תכתוב/י כאן את האילוצים..." style="flex-grow: 1; border: none; background: #f8fafc; padding: 15px 20px; border-radius: 12px; resize: none; outline: none; font-family: inherit; font-size: 15px; height: 50px; box-sizing: border-box;"></textarea>
+                
+                <button onclick="addMessage()" style="background-color: var(--primary-green); color: white; border: none; border-radius: 12px; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; padding: 0;" onmouseover="this.style.backgroundColor='var(--secondary-green)'" onmouseout="this.style.backgroundColor='var(--primary-green)'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1); margin-right: 3px;">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+
+            <button id="generate-btn" class="generate-btn" onclick="showSchedule()" style="display: none;">
+            </button>
+        </div>
+    </div>
+
+    <div id="schedule-section" class="schedule-container hidden">
+        
+<div style="position: relative; margin-bottom: 25px; display: flex; flex-direction: column; align-items: center;">
+            
+            <button id="expand-schedule-btn" onclick="toggleScheduleFullScreen()" style="position: absolute; left: 0; top: 0; background: #ffffff; color: var(--primary-green); border: 1px solid #e2e8f0; border-radius: 8px; width: 36px; height: 36px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.03);" title="הגדל למסך מלא" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+    ⛶
+</button>
+            
+            <div style="background-color: rgba(21, 122, 92, 0.1); border: 1px solid rgba(21, 122, 92, 0.2); color: var(--primary-green); padding: 8px 30px; border-radius: 50px; font-weight: bold; font-size: 18px; margin-bottom: 20px;">
+                בחר את החלופה המועדפת עליך
+            </div>
+
+            <div class="alternatives-tabs">
+                <button id="tab-alt1" class="tab-button active" onclick="showAlternative('alt1')">חלופה 1</button>
+                <button id="tab-alt2" class="tab-button" onclick="showAlternative('alt2')">חלופה 2</button>
+                <button id="tab-alt3" class="tab-button" onclick="showAlternative('alt3')">חלופה 3</button>
+            </div>
+            
+        </div>
+
+        <div id="alt1" class="alternative-content active"></div>    
+        <div id="alt2" class="alternative-content"></div>
+        <div id="alt3" class="alternative-content"></div>
+
+<div class="load-summary-panel" style="margin-top: 30px; background: transparent; padding: 0; border: none; box-shadow: none;">
+            
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; overflow: hidden;">
+                <div style="padding: 12px 20px; border-bottom: 1px solid #bfdbfe; display: flex; align-items: center; justify-content: space-between; background: #eff6ff;">
+    <h4 style="margin: 0; font-size: 15px; color: #1e293b; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+        הרכב ציון בקורסים
+        <span id="grades-course-count" style="font-size: 14px; font-weight: 600; color: #2563eb; margin-right: 5px;"></span>
+    </h4>
+</div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: right;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+                                <th style="padding: 15px 20px; color: #1e293b; font-weight: bold; font-size: 13px;">קורס</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;">נ"ז</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> מבחן סופי</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> בוחן אמצע</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>פרויקט</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> מטלות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grades-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+                <div style="padding: 12px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #fffafb;">
+                    <h4 style="margin: 0; font-size: 15px; color: #080808; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        לוח מבחנים
+                        <span id="exams-course-count" style="font-size: 14px; font-weight: 600; color: #e11d48; margin-right: 5px;"></span>
+                    </h4>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: right;">
+                       <thead>
+                            <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+                                <th style="padding: 15px 20px; color: #1e293b; font-weight: bold; font-size: 13px;">קורס</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> מועד א'</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> מרווח</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> מועד ב'</th>
+                                <th style="padding: 15px; color: #1e293b; font-weight: bold; font-size: 13px; text-align: center;"><svg style="vertical-align: middle; margin-left: 4px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> מרווח</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exams-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div> </div>
+    <div id="history-sidebar" style="width: 280px; background-color: #1e1e1e; border-left: 1px solid #333; padding: 15px; height: 100vh; position: fixed; right: -320px; top: 0; overflow-y: auto; font-family: Arial, sans-serif; z-index: 2000; transition: right 0.3s ease-in-out; color: #e0e0e0; box-shadow: -5px 0 15px rgba(0,0,0,0.5);" dir="rtl">
+
+    <button onclick="document.getElementById('history-sidebar').style.right = '-320px';" style="background: none; border: none; font-size: 1.8rem; cursor: pointer; float: left; color: #888; transition: 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">
+        &times;
+    </button>
+
+   <h3 style="margin-top: 10px; color: #fff; font-size: 1.1rem; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; text-align: center;">
+        <span style="font-size: 1.2rem; margin-left: 5px;"></span> צ'אטים קודמים
+    </h3>
+
+    <button onclick="startNewSession()" style="width: 100%; background-color: var(--primary-green); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; margin-bottom: 20px;" onmouseover="this.style.backgroundColor='var(--secondary-green)'" onmouseout="this.style.backgroundColor='var(--primary-green)'">
+    שיחה חדשה
+</button>
+
+    <ul id="history-list" style="list-style-type: none; padding: 0; margin: 0;">
+        <li style="background-color: transparent; border-radius: 8px; padding: 12px; margin-bottom: 5px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#333'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="color: #e0e0e0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                 בניית מערכת - אופציה א'
+            </div>
+            <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">היום, 14:30</div>
+        </li>
+
+        <li style="background-color: transparent; border-radius: 8px; padding: 12px; margin-bottom: 5px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#333'" onmouseout="this.style.backgroundColor='transparent'">
+            <div style="color: #e0e0e0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                 מערכת סמסטר ב'
+            </div>
+            <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">24/02/2026</div>
+        </li>
+    </ul>
+</div>
+ <script>
+// --- 1. ארון התיקיות שלנו: ניהול נפרד לכל סמסטר ---
+    let currentSemester = 1;
+
+    let semesterData = {
+        1: { history: [], chatHTML: `<div style="text-align: center; margin-top: 0px;"><h3 style="color: var(--primary-green); font-size: 20px; margin-bottom: 8px;">היי, אני העוזר שלך לסמסטר א'</h3><p style="color: var(--text-muted); font-size: 16px; margin-top: 0;">ספר לי על האילוצים שלך ואבנה לך מערכת</p></div>`, schedulesData: null, titles: null, sessionId: null },
+        2: { history: [], chatHTML: `<div style="text-align: center; margin-top: 0px;"><h3 style="color: var(--primary-green); font-size: 20px; margin-bottom: 8px;">היי, אני העוזר שלך לסמסטר ב'</h3><p style="color: var(--text-muted); font-size: 16px; margin-top: 0;">ספר לי על האילוצים שלך ואבנה לך מערכת</p></div>`, schedulesData: null, titles: null, sessionId: null },
+        3: { history: [], chatHTML: `<div style="text-align: center; margin-top: 0px;"><h3 style="color: var(--primary-green); font-size: 20px; margin-bottom: 8px;">היי, אני העוזר שלך לסמסטר קיץ</h3><p style="color: var(--text-muted); font-size: 16px; margin-top: 0;">ספר לי על האילוצים שלך ואבנה לך מערכת</p></div>`, schedulesData: null, titles: null, sessionId: null }
+    };
+
+    function setSemester(semName, btnElement) {
+        const historyDiv = document.getElementById('chat-history');
+        semesterData[currentSemester].chatHTML = historyDiv.innerHTML;
+
+        if (semName === 'א') currentSemester = 1;
+        else if (semName === 'ב') currentSemester = 2;
+        else if (semName === 'קיץ') currentSemester = 3;
+
+        document.querySelectorAll('.semester-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        historyDiv.innerHTML = semesterData[currentSemester].chatHTML;
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+
+        const data = semesterData[currentSemester].schedulesData;
+        
+        // אם יש מערכת שמורה לסמסטר הזה - מציגים אותה (מסך מפוצל)
+        if (data) {
+            const currentTitles = semesterData[currentSemester].titles;
+            if (currentTitles) {
+                document.getElementById('tab-alt1').innerText = currentTitles.alt1 || "חלופה 1";
+                document.getElementById('tab-alt2').innerText = currentTitles.alt2 || "חלופה 2";
+                document.getElementById('tab-alt3').innerText = currentTitles.alt3 || "חלופה 3";
+            }
+            if (data.alt1) renderScheduleTable(data.alt1, 'alt1');
+            if (data.alt2) renderScheduleTable(data.alt2, 'alt2');
+            if (data.alt3) renderScheduleTable(data.alt3, 'alt3');
+            renderGrades(semesterData[currentSemester].gradesData || []);
+            renderExams(semesterData[currentSemester].examsData || []);
+            showSchedule();
+            showAlternative('alt1');
+        } 
+        // אם אין מערכת לסמסטר הזה (שיחה חדשה) - ממרכזים את הצ'אט!
+        else {
+            const scheduleSection = document.getElementById('schedule-section');
+            const chatSection = document.getElementById('chat-section');
+            const generateBtn = document.getElementById('generate-btn');
+            const container = document.querySelector('.main-container');
+            const resizer = document.getElementById('drag-resizer');
+            const expandBtn = document.getElementById('expand-chat-btn');
+            
+            if (generateBtn) {
+                generateBtn.innerHTML = "✨ סיימתי, צור לי מערכת!";
+                generateBtn.style.background = "var(--primary-green)";
+            }
+            
+            // מעלים כפתורי הרחבה
+            if (expandBtn) expandBtn.style.display = 'none';
+
+            // מבטל את הפיצול ומעלים את המערכת ופס הגרירה
+            if (container) container.style.display = 'block'; 
+            if (scheduleSection) scheduleSection.style.display = 'none';
+            if (resizer) resizer.style.display = 'none';
+
+            // ממרכז את הצ'אט
+            if (chatSection) {
+                chatSection.style.display = 'block';
+                chatSection.style.width = '100%';
+                chatSection.style.maxWidth = '800px'; 
+                chatSection.style.margin = '0 auto'; 
+                chatSection.style.minWidth = '0';
+            }
+        }
+        
+        // מעדכן את תפריט ההיסטוריה השחור כך שיציג רק את השיחות של הסמסטר שנבחר
+        if (typeof renderHistoryList === 'function') {
+            renderHistoryList(); 
+        }
+    }
+
+  function showSchedule() {
+        const scheduleSection = document.getElementById('schedule-section');
+        const chatSection = document.getElementById('chat-section');
+        const generateBtn = document.getElementById('generate-btn');
+        
+        // מוודאים שאנחנו מסירים מחלקות CSS שאולי מפריעות
+        chatSection.classList.remove('full-screen');
+        chatSection.classList.remove('hidden');
+        scheduleSection.classList.remove('hidden');
+        scheduleSection.classList.remove('full-screen');
+        
+        // קוראים לפונקציית האיפוס שמנקה שינויים מהכפתורים
+        resetSplitScreen();
+
+        if (generateBtn) generateBtn.style.background = "#6c757d";
+
+        // מציגים את שני הכפתורים
+        const expandChatBtn = document.getElementById('expand-chat-btn');
+        if (expandChatBtn) expandChatBtn.style.display = 'flex';
+
+        const expandScheduleBtn = document.getElementById('expand-schedule-btn');
+        if (expandScheduleBtn) expandScheduleBtn.style.display = 'flex';
+    }
+
+    function showAlternative(id) {
+        document.querySelectorAll('.alternative-content').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        const selectedContent = document.getElementById(id);
+        if (selectedContent) selectedContent.classList.add('active');
+        const tabButton = document.getElementById('tab-' + id);
+        if (tabButton) tabButton.classList.add('active');
+    }
+
+   async function sendToGemini(text) {
+        try {
+            let currentStudentId = null;
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                currentStudentId = user.student_id || user.id || user.studentId; 
+            }
+
+            const response = await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: text,
+                    history: semesterData[currentSemester].history, 
+                    semester: currentSemester,
+                    student_id: currentStudentId ? parseInt(currentStudentId) : null,
+                    session_id: semesterData[currentSemester].sessionId
+                })
+            });
+
+            if (!response.ok) return { reply: "מתנצל, עומס זמני", session_id: null };
+            
+            // --- התיקון מתחיל כאן ---
+            const data = await response.json(); // שומרים את התשובה במשתנה במקום להחזיר מיד
+            
+            // בודקים אם לפני ההודעה הזו לא היה לנו מזהה (כלומר - זו ההודעה הראשונה בשיחה החדשה!)
+            const isNewSession = !semesterData[currentSemester].sessionId;
+            
+            if (isNewSession && data.session_id && currentStudentId) {
+                // מושכים ברקע את היסטוריית השיחות המעודכנת
+                fetch(`${API_BASE}/api/history/${currentStudentId}`)
+                    .then(res => res.json())
+                    .then(sessions => {
+                        if (typeof renderHistoryList === 'function') {
+                            renderHistoryList(sessions); 
+                            
+                            // --- הפתרון: השהיה קטנטנה כדי שהדפדפן יספיק לצייר את השורה ---
+                            setTimeout(() => {
+                                // קודם נוודא ששום שורה אחרת לא מסומנת
+                                document.querySelectorAll('.history-list-item').forEach(li => {
+                                    li.style.backgroundColor = 'transparent';
+                                    li.style.borderRightColor = 'transparent';
+                                });
+                                
+                                // עכשיו נמצא את השיחה החדשה ונצבע אותה בדיוק כמו בתמונה!
+                                const activeItem = document.getElementById(`history-item-${data.session_id}`);
+                                if (activeItem) {
+                                    activeItem.style.backgroundColor = '#333';
+                                    activeItem.style.borderRightColor = 'var(--primary-green)';
+                                }
+                            }, 50); // 50 אלפיות השנייה עושות את כל ההבדל
+                            // -------------------------------------------------------------
+                        }
+                    })
+                    .catch(err => console.error("שגיאה ברענון היסטוריה:", err));
+            }
+            
+            return data; // מחזירים את התשובה להמשך הטיפול הרגיל
+            // --- התיקון מסתיים כאן ---
+
+        } catch (error) {
+            return { reply: "שגיאת תקשורת.", session_id: null };
+        }
+    }
+
+    async function addMessage() {
+        const input = document.getElementById('user-input');
+        const historyDiv = document.getElementById('chat-history');
+        const userText = input.value;
+
+        if(!userText) return; 
+
+       const userMsg = document.createElement('div');
+        userMsg.className = 'message user-message';
+        userMsg.innerText = userText;
+        historyDiv.appendChild(userMsg);
+        
+        input.value = "";
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+
+        const loadingMsg = document.createElement('div');
+        loadingMsg.innerText = "מקליד...";
+        loadingMsg.style.cssText = "color:#888; font-size:12px;";
+        historyDiv.appendChild(loadingMsg);
+
+        const serverData = await sendToGemini(userText);
+        const botReply = serverData.reply || serverData;
+        if (serverData.session_id) semesterData[currentSemester].sessionId = serverData.session_id;
+
+        historyDiv.removeChild(loadingMsg);
+
+        let displayText = botReply; 
+        let newSchedules = null; 
+
+        const jsonMatch = botReply.match(/```json([\s\S]*?)```/);
+        if (jsonMatch) {
+            try {
+                const parsedData = JSON.parse(jsonMatch[1].trim()); 
+                displayText = parsedData.text || "הנה המערכות שבניתי עבורך:"; 
+                newSchedules = parsedData.schedules; 
+                
+                semesterData[currentSemester].schedulesData = newSchedules;
+                semesterData[currentSemester].titles = parsedData.titles;
+                semesterData[currentSemester].gradesData = parsedData.gradeDistribution;
+                semesterData[currentSemester].examsData = parsedData.exams;
+
+                if (parsedData.gradeDistribution) renderGrades(parsedData.gradeDistribution);
+                if (parsedData.exams) renderExams(parsedData.exams);
+            } catch (e) {}
+        }
+
+        const botMsg = document.createElement('div');
+        botMsg.className = 'message system-message';
+        botMsg.innerText = displayText; 
+        historyDiv.appendChild(botMsg);
+
+        semesterData[currentSemester].history.push({ role: "user", parts: [{ text: userText }] });
+        semesterData[currentSemester].history.push({ role: "model", parts: [{ text: botReply }] });
+        semesterData[currentSemester].chatHTML = historyDiv.innerHTML;
+        historyDiv.scrollTop = historyDiv.scrollHeight;
+
+        if (newSchedules) {
+            const currentTitles = semesterData[currentSemester].titles;
+            if (currentTitles) {
+                document.getElementById('tab-alt1').innerText = currentTitles.alt1 || "חלופה 1";
+                document.getElementById('tab-alt2').innerText = currentTitles.alt2 || "חלופה 2";
+                document.getElementById('tab-alt3').innerText = currentTitles.alt3 || "חלופה 3";
+            }
+            if (newSchedules.alt1) renderScheduleTable(newSchedules.alt1, 'alt1');
+            if (newSchedules.alt2) renderScheduleTable(newSchedules.alt2, 'alt2');
+            if (newSchedules.alt3) renderScheduleTable(newSchedules.alt3, 'alt3');
+            showSchedule(); 
+            showAlternative('alt1'); 
+            if (typeof loadHistorySidebar === 'function') loadHistorySidebar();
+        }
+    }
+
+   function renderScheduleTable(scheduleData, containerId, isSaved = false) {
+        const colors = ['#0d6efd', '#198754', '#6f42c1', '#fd7e14', '#d63384', '#20c997', '#ffc107', '#0dcaf0'];
+        const courseColors = {};
+        let colorIndex = 0;
+        const uniqueCourses = new Set();
+        let totalWeeklyHours = 0;
+
+        scheduleData.forEach(item => {
+            if (!courseColors[item.courseName]) {
+                courseColors[item.courseName] = colors[colorIndex % colors.length];
+                colorIndex++;
+            }
+            uniqueCourses.add(item.courseName);
+            const startH = parseInt(item.startTime.split(':')[0], 10);
+            const startM = parseInt(item.startTime.split(':')[1], 10);
+            const endH = parseInt(item.endTime.split(':')[0], 10);
+            const endM = parseInt(item.endTime.split(':')[1], 10);
+            const totalMinutes = ((endH * 60) + endM) - ((startH * 60) + startM) + 10;
+            totalWeeklyHours += totalMinutes / 60;
+        });
+
+        const totalCoursesCount = uniqueCourses.size;
+        totalWeeklyHours = Math.round(totalWeeklyHours * 10) / 10;
+
+        let minHour = 24, maxHour = 0;
+        scheduleData.forEach(item => {
+            const startH = parseInt(item.startTime.split(':')[0], 10);
+            const endH = parseInt(item.endTime.split(':')[0], 10);
+            const endM = parseInt(item.endTime.split(':')[1], 10);
+            const endCeil = Math.ceil(endH + (endM / 60)); 
+            if (startH < minHour) minHour = startH;
+            if (endCeil > maxHour) maxHour = endCeil; 
+        });
+
+        if (minHour === 24) minHour = 8; 
+        if (maxHour === 0) maxHour = 20; 
+
+let tableHTML = `
+           <div style="background-color: #ffffff; padding: 15px 25px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                
+                <div style="display: flex; align-items: center; gap: 30px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: #555;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                        <span style="font-size: 24px; font-weight: bold; color: var(--primary-green);">${totalCoursesCount}</span>
+                        <span style="font-size: 16px; font-weight: 500;">קורסים</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px; color: #555;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span style="font-size: 24px; font-weight: bold; color: var(--primary-green);">${totalWeeklyHours}</span>
+                        <span style="font-size: 16px; font-weight: 500;">שעות שבועיות</span>
+                    </div>
+                </div>
+
+                ${isSaved ? `
+                <div class="selected-action-group" data-altkey="${containerId}" style="display: flex; gap: 10px; align-items: center;">
+                    <button style="display: flex; align-items: center; gap: 8px; background-color: #e8f4ed; color: #157a5c; border: 1px solid #cce5d8; border-radius: 50px; padding: 10px 24px; font-weight: bold; cursor: default; font-size: 15px;">
+                        המערכת נבחרה כמועדפת
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </button>
+                    <button onclick="cancelAlternative(this.parentElement, '${containerId}')" style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; color: #64748b; border: 1px solid #e2e8f0; border-radius: 50px; padding: 10px 20px; font-weight: 500; cursor: pointer; transition: 0.2s; font-size: 15px;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='#ffffff'">
+                        ביטול
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                    </button>
+                </div>
+                ` : `
+                <button class="select-alt-button" onclick="chooseAlternative(this, '${containerId}')" style="margin: 0; background-color: var(--primary-green); color: white; border-radius: 50px; padding: 12px 24px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; font-size: 15px;">
+                    סמן כמערכת מועדפת
+                </button>
+                `}
+                
+            </div>
+            
+            <div style="display: flex; justify-content: flex-start; align-items: center; gap: 8px; margin-bottom: 12px; color: #333;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <h4 style="margin: 0; font-size: 17px; font-weight: bold;">מערכת שעות שבועית</h4>
+            </div>
+
+            <table class="schedule-table" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 10%; border-bottom: 2px solid #ddd; padding: 10px;">שעה</th>
+                        <th style="width: 18%; border-bottom: 2px solid #ddd; padding: 10px;">א'</th>
+                        <th style="width: 18%; border-bottom: 2px solid #ddd; padding: 10px;">ב'</th>
+                        <th style="width: 18%; border-bottom: 2px solid #ddd; padding: 10px;">ג'</th>
+                        <th style="width: 18%; border-bottom: 2px solid #ddd; padding: 10px;">ד'</th>
+                        <th style="width: 18%; border-bottom: 2px solid #ddd; padding: 10px;">ה'</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `
+        ;
+
+        const skipCells = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+        for (let h = minHour; h < maxHour; h++) {
+            const hourString = h.toString().padStart(2, '0');
+            const displayTime = `${hourString}:00`;
+            tableHTML += `<tr><td style="border: 1px solid #eee; padding: 8px; vertical-align: top; color: #555;">${displayTime}</td>`;
+            for (let day = 1; day <= 5; day++) {
+                if (skipCells[day] > 0) {
+                    skipCells[day]--;
+                    continue;
+                }
+                const courseInSlot = scheduleData.find(c => c.day === day && c.startTime.startsWith(hourString));
+                if (courseInSlot) {
+                    const bgColor = courseColors[courseInSlot.courseName];
+                    const startH_c = parseInt(courseInSlot.startTime.split(':')[0], 10);
+                    const endH_c = parseInt(courseInSlot.endTime.split(':')[0], 10);
+                    const endM_c = parseInt(courseInSlot.endTime.split(':')[1], 10);
+                    const durationInHours = Math.ceil(endH_c + (endM_c / 60)) - startH_c;
+                    if (durationInHours > 1) skipCells[day] = durationInHours - 1;
+
+                    const lecturerDisplay = courseInSlot.lecturer && courseInSlot.lecturer.trim() !== "" 
+                        ? `<span style="font-size: 0.85em; font-weight: 500; display: block; margin: 3px 0;">${courseInSlot.lecturer}</span>` : "";
+
+                   // --- לוגיקה מתוקנת: סגול ואדום ---
+                    let borderStyle = "2px solid white"; // ברירת מחדל
+                    let electiveBadge = "";
+                    
+                    const courseStats = (semesterData[currentSemester].gradesData || []).find(g => 
+                        g.courseName && courseInSlot.courseName && 
+                        g.courseName.trim() === courseInSlot.courseName.trim()
+                    );
+                    
+                    if (courseStats) {
+                        // 1. שליפת נתון הנוכחות (תומך בבוליאני ובמחרוזת)
+                        const rawAtt = courseStats.is_attendance_mandatory !== undefined ? 
+                                       courseStats.is_attendance_mandatory : courseStats.attendance;
+                        
+                        // הפיכה למחרוזת לצורך בדיקה נוחה, תוך טיפול בערכים בוליאניים
+                        const attendanceVal = String(rawAtt).toLowerCase().trim();
+                        
+                        // 2. חישוב משקל פרויקט
+                        const weightStr = String(courseStats.projectWeight || "0%");
+                        const weightNum = parseFloat(weightStr.replace('%', '')) || 0;
+
+                        // --- תנאי הצביעה המתוקנים ---
+                        // בדיקה אם זה TRUE (בוליאני או מחרוזת) או מכיל מילים של חובה
+                        if (rawAtt === true || attendanceVal === "true" || attendanceVal === "1" || attendanceVal === "כן" || attendanceVal.includes("מלאה") || attendanceVal.includes("חובה")) {
+                            borderStyle = "4px solid #ef4444"; // אדום - חובה מלאה
+                        } 
+                        // אם זה לא אדום, נבדוק אם זה סגול (נוכחות חלקית/פרויקט/או פשוט false בדאטה)
+                        else if (attendanceVal.includes("חלקית") || weightNum > 0 || rawAtt === false || attendanceVal === "false") {
+                            borderStyle = "4px solid #8b5cf6"; // סגול - חלקית
+                        }
+
+                        // 3. סימון קורס בחירה (⭐)
+                        if (courseStats.is_elective === true || (courseStats.type && courseStats.type.includes("בחירה"))) {
+                            electiveBadge = `<div style="background: rgba(255,255,255,0.2); font-size: 11px; border-radius: 4px; margin-bottom: 4px; display: inline-block; padding: 1px 5px;">⭐ בחירה</div><br>`;
+                        }
+                    }
+
+                    tableHTML += `<td rowspan="${durationInHours}" style="background-color: ${bgColor}; color: white; border-radius: 6px; padding: 8px; text-align: center; border: ${borderStyle}; box-shadow: 0 2px 10px rgba(0,0,0,0.1); vertical-align: middle;">
+                        ${electiveBadge}
+                        <strong style="display: block; margin-bottom: 2px;">${courseInSlot.courseName}</strong>
+                        <div style="font-size: 0.8em; opacity: 0.9;">${courseInSlot.type}</div>
+                        ${lecturerDisplay}
+                        <div style="font-size: 0.8em; margin-top: 3px; font-weight: 500;">${courseInSlot.startTime} - ${courseInSlot.endTime}</div>
+                    </td>`;
+                } else {
+                    tableHTML += `<td style="border: 1px solid #eee;"></td>`;
+                }
+            }
+            tableHTML += `</tr>`;
+        }
+
+        tableHTML += `
+                </tbody>
+            </table>
+            
+            <div style="display: flex; gap: 20px; align-items: center; justify-content: flex-start; margin-top: 15px; margin-bottom: 5px; font-size: 13px; color: #64748b;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="width: 14px; height: 14px; border-radius: 50%; border: 3px solid #ef4444; box-sizing: border-box;"></div>
+                    <span>חובת נוכחות מלאה</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="width: 14px; height: 14px; border-radius: 50%; border: 3px solid #8b5cf6; box-sizing: border-box;"></div>
+                    <span>חובת נוכחות חלקית</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span>קורס בחירה</span>
+                </div>
+            </div>
+        `;
+        const container = document.getElementById(containerId);
+        if (container) container.innerHTML = tableHTML;
+    }
+
+function renderGrades(gradesArray) {
+        const tbody = document.getElementById('grades-table-body');
+        const countSpan = document.getElementById('grades-course-count');
+        if (!tbody) return;
+        
+        if (!gradesArray || gradesArray.length === 0) {
+            if(countSpan) countSpan.innerText = '';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 15px; color:#64748b;">אין נתונים על הרכב הציון</td></tr>';
+            return;
+        }
+
+        if(countSpan) countSpan.innerText = `${gradesArray.length} קורסים`;
+
+        const parseVal = (val) => {
+            if (!val || val === '-') return 0;
+            return parseFloat(val.toString().replace('%', '')) || 0;
+        };
+
+        gradesArray.sort((a, b) => {
+            let diff = parseVal(b.creditPoints) - parseVal(a.creditPoints);
+            if (diff !== 0) return diff;
+            diff = parseVal(b.finalExamWeight) - parseVal(a.finalExamWeight);
+            if (diff !== 0) return diff;
+            diff = parseVal(b.projectWeight) - parseVal(a.projectWeight);
+            if (diff !== 0) return diff;
+            diff = parseVal(b.midExamWeight) - parseVal(a.midExamWeight);
+            if (diff !== 0) return diff;
+            return parseVal(b.homeworkWeight) - parseVal(a.homeworkWeight);
+        });
+
+        // פונקציית עזר ליצירת תוויות ציונים לפי טווחים
+        const pillStyle = (val) => {
+            const num = parseVal(val);
+            if (num === 0) return `<span style="color: #cbd5e1; font-size: 13px;">0%</span>`;
+            
+            let t;
+            if (num >= 80) { // 80-100: אדום
+                t = { color: '#ef4444', bg: '#fee2e2', border: '#fca5a5' };
+            } else if (num >= 50) { // 50-79: סגול
+                t = { color: '#8b5cf6', bg: '#f3e8ff', border: '#d8b4fe' };
+            } else if (num >= 20) { // 20-49: ירוק
+                t = { color: '#10b981', bg: '#dcfce7', border: '#86efac' };
+            } else { // 1-19: כחול
+                t = { color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' };
+            }
+            
+            return `<span style="display: inline-block; min-width: 45px; border: 1px solid ${t.border}; background: ${t.bg}; color: ${t.color}; padding: 3px 10px; border-radius: 50px; font-weight: 600; font-size: 12px; text-align: center;">${num}%</span>`;
+        };
+
+        let html = '';
+        gradesArray.forEach((item) => {
+            // טיפול בתצוגת נקודות הזכות - בתוך עיגול אפור קטן
+            let creditDisplay = '-';
+            if (item.creditPoints && item.creditPoints !== 'NaN') {
+                creditDisplay = parseFloat(item.creditPoints).toFixed(1);
+            }
+            const creditPill = `<span style="display: inline-block; min-width: 30px; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; padding: 3px 10px; border-radius: 50px; font-weight: 600; font-size: 12px; text-align: center;">${creditDisplay}</span>`;
+
+            html += `<tr style="border-bottom: 1px solid #f8fafc; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 15px 20px; color: #0f172a; font-weight: 600; font-size: 13px;">
+                    ${item.courseName}
+                </td>
+                <td style="padding: 15px; text-align: center;">${creditPill}</td>
+                <td style="padding: 15px; text-align: center;">${pillStyle(item.finalExamWeight)}</td>
+                <td style="padding: 15px; text-align: center;">${pillStyle(item.midExamWeight)}</td>
+                <td style="padding: 15px; text-align: center;">${pillStyle(item.projectWeight)}</td>
+                <td style="padding: 15px; text-align: center;">${pillStyle(item.homeworkWeight)}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+ function renderExams(examsArray) {
+        const tbody = document.getElementById('exams-table-body');
+        const countSpan = document.getElementById('exams-course-count');
+        if (!tbody) return;
+
+        let processedExams = (examsArray || []).map(e => ({
+            courseName: e.courseName,
+            dateA: e.dateA || e.date || '',
+            dateB: e.dateB || ''
+        })).filter(e => {
+            const hasValidA = e.dateA && e.dateA.trim() !== '' && e.dateA !== '-' && e.dateA.toUpperCase() !== 'NULL';
+            const hasValidB = e.dateB && e.dateB.trim() !== '' && e.dateB !== '-' && e.dateB.toUpperCase() !== 'NULL';
+            return hasValidA || hasValidB;
+        });
+
+        if (processedExams.length === 0) {
+            if(countSpan) countSpan.innerText = '';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 15px; color:#64748b;">אין מבחנים מתוכננים</td></tr>';
+            return;
+        }
+
+        if(countSpan) countSpan.innerText = `${processedExams.length} מבחנים`;
+
+        processedExams.sort((a, b) => new Date(a.dateA || '2099-01-01') - new Date(b.dateA || '2099-01-01'));
+
+        const allDatesA = processedExams.map(e => e.dateA).filter(d => d).sort((a,b) => new Date(a) - new Date(b));
+        const allDatesB = processedExams.map(e => e.dateB).filter(d => d).sort((a,b) => new Date(a) - new Date(b));
+
+        // 1. מוצאים את התאריך האחרון של מועד א'
+        const lastDateA = allDatesA.length > 0 ? allDatesA[allDatesA.length - 1] : null;
+
+        // 2. הפונקציה מקבלת עכשיו פרמטר שלישי - "תאריך קודם חלופי" (לחיבור בין התקופות)
+        const getGapAndColor = (currentDate, sortedDatesList, fallbackPrevDate = null) => {
+            if (!currentDate) return { text: '—', bg: 'transparent', color: '#cbd5e1', border: 'transparent' };
+            const idx = sortedDatesList.indexOf(currentDate);
+            
+            let prevDate;
+            if (idx === 0) {
+                if (fallbackPrevDate) {
+                    prevDate = fallbackPrevDate; // חישוב הפער ממועד א' האחרון
+                } else {
+                    return { text: '—', bg: 'transparent', color: '#cbd5e1', border: 'transparent' };
+                }
+            } else {
+                prevDate = sortedDatesList[idx - 1];
+            }
+            
+            const diffTime = Math.abs(new Date(currentDate) - new Date(prevDate));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let bg, color, border;
+            if (diffDays <= 2) { bg = '#fee2e2'; color = '#ef4444'; border = '#fca5a5'; } 
+            else if (diffDays <= 5) { bg = '#ffedd5'; color = '#f97316'; border = '#fdba74'; } 
+            else { bg = '#dcfce7'; color = '#10b981'; border = '#86efac'; } 
+
+            return { text: diffDays + ' ימים', bg, color, border };
+        };
+
+        const formatHebrewDate = (dateStr) => {
+            if (!dateStr || dateStr.trim() === '-' || dateStr.trim() === '') return '—';
+            const d = new Date(dateStr);
+            if(isNaN(d)) return dateStr;
+            return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; // פורמט D/M/YYYY
+        };
+
+        let html = '';
+        processedExams.forEach(exam => {
+            const gapA = getGapAndColor(exam.dateA, allDatesA, null);
+            // 3. שולחים את התאריך האחרון של מועד א' בתור נקודת ההתחלה של מועד ב'
+            const gapB = getGapAndColor(exam.dateB, allDatesB, lastDateA); 
+            
+            const badgeA = gapA.text !== '—' ? `<span style="border: 1px solid ${gapA.border}; background: ${gapA.bg}; color: ${gapA.color}; padding: 3px 12px; border-radius: 50px; font-size: 12px; font-weight: 600;">${gapA.text}</span>` : '<span style="color:#cbd5e1;">—</span>';
+            const badgeB = gapB.text !== '—' ? `<span style="border: 1px solid ${gapB.border}; background: ${gapB.bg}; color: ${gapB.color}; padding: 3px 12px; border-radius: 50px; font-size: 12px; font-weight: 600;">${gapB.text}</span>` : '<span style="color:#cbd5e1;">—</span>';
+
+            html += `<tr style="border-bottom: 1px solid #f8fafc; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 15px 20px; color: #0f172a; font-weight: 600; font-size: 13px;">${exam.courseName}</td>
+                <td style="padding: 15px; color: #475569; font-size: 13px; text-align: center;">${formatHebrewDate(exam.dateA)}</td>
+                <td style="padding: 15px; text-align: center;">${badgeA}</td>
+                <td style="padding: 15px; color: #475569; font-size: 13px; text-align: center;">${formatHebrewDate(exam.dateB)}</td>
+                <td style="padding: 15px; text-align: center;">${badgeB}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    async function loadHistorySidebar() {
+        try {
+            let currentStudentId = null;
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                currentStudentId = user.student_id || user.id || user.studentId; 
+            }
+            if (!currentStudentId) return;
+
+            const response = await fetch(`${API_BASE}/api/history/${currentStudentId}`);
+            if (!response.ok) return;
+            const sessions = await response.json();
+            renderHistoryList(sessions);
+        } catch (error) {
+            console.error("Error fetching history:", error);
+        }
+    }
+
+  // משתנה גלובלי שיזכור את כל השיחות ברקע
+    let allHistorySessions = [];
+
+    function renderHistoryList(sessions) {
+        // אם קיבלנו שיחות חדשות מהשרת, נשמור אותן בזיכרון הגלובלי
+        if (sessions) {
+            allHistorySessions = sessions; 
+        }
+
+        const historyList = document.getElementById('history-list');
+        if (!historyList) return;
+        historyList.innerHTML = ''; 
+
+        // 1. מזהים איזה סמסטר פתוח כרגע במסך
+        let activeSemStr = 'א';
+        if (currentSemester === 2) activeSemStr = 'ב';
+        if (currentSemester === 3) activeSemStr = 'קיץ';
+
+        // 2. מסננים את הרשימה: משאירים רק מה ששייך לסמסטר הפעיל
+        const filteredSessions = allHistorySessions.filter(session => {
+            let sessionSem = session.semester;
+            if (!sessionSem) { // גיבוי לשיחות ישנות מהעבר
+                if (session.title && session.title.includes('קיץ')) sessionSem = 'קיץ';
+                else if (session.title && session.title.includes('ב')) sessionSem = 'ב';
+                else sessionSem = 'א';
+            }
+            return sessionSem === activeSemStr;
+        });
+
+        // 3. אם אין שיחות לסמסטר הספציפי הזה
+        if (filteredSessions.length === 0) {
+            historyList.innerHTML = `<li style="text-align:center; color:#888; padding: 15px;">אין עדיין שיחות לסמסטר ${activeSemStr} 📭</li>`;
+            return;
+        }
+
+        // 4. מיון הרשימה המצומצמת (קודם מוצמד, אח"כ תאריך)
+        filteredSessions.sort((a, b) => {
+            if (a.is_pinned && !b.is_pinned) return -1;
+            if (!a.is_pinned && b.is_pinned) return 1;
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+
+        // 5. ציור השורות
+        filteredSessions.forEach(session => {
+            const dateObj = new Date(session.created_at);
+            const dateString = dateObj.toLocaleDateString('he-IL');
+            const timeString = dateObj.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+
+            const li = document.createElement('li');
+            const sessionId = session.session_id || session.id;
+            
+            li.id = `history-item-${sessionId}`;
+            li.className = 'history-list-item';
+            li.style.cssText = "background-color: transparent; border-radius: 8px; padding: 12px; margin-bottom: 5px; cursor: pointer; transition: all 0.2s; border-right: 4px solid transparent; position: relative;";
+            
+            li.onmouseover = function() { if(this.style.borderRightColor === 'transparent') this.style.backgroundColor='#333' };
+            li.onmouseout = function() { if(this.style.borderRightColor === 'transparent') this.style.backgroundColor='transparent' };
+            
+            li.onclick = function(e) {
+                if(e.target.closest('.menu-container')) return;
+                loadSpecificSession(sessionId, activeSemStr);
+            };
+
+            const pinIcon = session.is_pinned ? '<span style="color:#ff4d4d; margin-left:5px;">📌</span>' : '';
+            const pinText = session.is_pinned ? 'הסרת הצמדה' : 'הצמדה';
+
+            li.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="color: #e0e0e0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; padding-left: 10px;">
+                        ${pinIcon} <span id="title-${sessionId}">${session.title}</span>
+                    </div>
+                    
+                    <div class="menu-container" style="position: relative;">
+                        <button onclick="toggleMenu(event, ${sessionId})" style="background:none; border:none; color:#bbb; cursor:pointer; font-size:1.2rem; padding:0 5px; line-height: 1;">⋮</button>
+                        
+                        <div id="menu-${sessionId}" class="action-menu" style="display:none; position:absolute; left:0; top:20px; background:#2a2a2a; border: 1px solid #444; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.5); z-index:100; min-width:140px; padding:5px 0; text-align: right;">
+                            <div onclick="pinSession(${sessionId}, ${!session.is_pinned})" style="padding:8px 15px; cursor:pointer; color:white; font-size:0.9rem; transition:background 0.2s;" onmouseover="this.style.background='#444'" onmouseout="this.style.background='transparent'">📌 ${pinText}</div>
+                            <div onclick="renameSession(${sessionId}, '${session.title}')" style="padding:8px 15px; cursor:pointer; color:white; font-size:0.9rem; transition:background 0.2s;" onmouseover="this.style.background='#444'" onmouseout="this.style.background='transparent'">✏️ שינוי שם</div>
+                            <div onclick="deleteSession(${sessionId})" style="padding:8px 15px; cursor:pointer; color:white; font-size:0.9rem; transition:background 0.2s;" onmouseover="this.style.background='#444'" onmouseout="this.style.background='transparent'">🗑️ מחיקה</div>
+                        </div>
+                    </div>
+                </div>
+               <div style="font-size: 0.75rem; color: #888; margin-top: 5px;">
+    ${dateString}, ${timeString} &nbsp; ${session.has_saved_schedule ? '<span title="מערכת נשמרה" style="font-size: 0.85rem; cursor: help;">🤍</span>' : ''}
+</div>
+            `;
+            historyList.appendChild(li); 
+        });
+
+        // 6. מחזיר את הפס הכחול לשיחה הפעילה (אם יש כזו בסמסטר הזה)
+        const activeSessionId = semesterData[currentSemester]?.sessionId;
+        if (activeSessionId) {
+            const activeItem = document.getElementById(`history-item-${activeSessionId}`);
+            if (activeItem) {
+                activeItem.style.backgroundColor = '#333';
+                activeItem.style.borderRightColor = 'var(--primary-green)';
+            }
+        }
+    }
+
+function startNewSession() {
+        // --- ביטול הסימון כשפותחים שיחה חדשה לגמרי ---
+        document.querySelectorAll('.history-list-item').forEach(li => {
+            li.style.backgroundColor = 'transparent';
+            li.style.borderRightColor = 'transparent';
+        });
+        // ----------------------------------------------
+        // 1. סגירת תפריט הצד
+        document.getElementById('history-sidebar').style.right = '-320px';
+
+        // 2. שאיבת פרטי המשתמש כדי שג'מיני ימשיך להכיר אותו בשיחה החדשה
+        const storedUser = localStorage.getItem('currentUser');
+        let userName = "סטודנט";
+        let userInfoStr = "";
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            userName = user.name || userName;
+            userInfoStr = JSON.stringify(user);
+        }
+
+        // 3. הגדרת שם הסמסטר להודעת הפתיחה
+        let semName = currentSemester === 1 ? "א'" : (currentSemester === 2 ? "ב'" : "קיץ");
+
+        // 4. איפוס מוחלט של הזיכרון לסמסטר הנוכחי (הכי חשוב: sessionId = null)
+        semesterData[currentSemester] = {
+            history: [
+                { role: "user", parts: [{ text: `שלום, אלו הפרטים האישיים שלי: ${userInfoStr}. אנא השתמש בהם.` }] },
+                { role: "model", parts: [{ text: `הבנתי לחלוטין, ${userName}! קלטתי את הפרטים. אני מוכן לעזור לך לבנות את המערכת לסמסטר ${currentSemester}.` }] }
+            ],
+           chatHTML: `<div style="text-align: center; margin-top: 0px;"><h3 style="color: var(--primary-green); font-size: 20px; margin-bottom: 8px;">היי, אני העוזר שלך לסמסטר ${semName}</h3><p style="color: var(--text-muted); font-size: 16px; margin-top: 0;">ספר לי על האילוצים שלך ואבנה לך מערכת</p></div>`,
+            schedulesData: null,
+            titles: null,
+            gradesData: null,
+            examsData: null,
+            sessionId: null 
+        };
+
+        // 5. ניקוי המסך (מעלים את המערכות ומחזיר רק את הצ'אט)
+        document.getElementById('chat-history').innerHTML = semesterData[currentSemester].chatHTML;
+        
+        const scheduleSection = document.getElementById('schedule-section');
+        if (scheduleSection) scheduleSection.classList.add('hidden');
+        
+        const chatSection = document.getElementById('chat-section');
+        if (chatSection) chatSection.classList.add('full-screen');
+        
+        const generateBtn = document.getElementById('generate-btn');
+        if (generateBtn) {
+            generateBtn.innerHTML = "✨ סיימתי, צור לי מערכת!";
+            generateBtn.style.background = "var(--primary-green)";
+        }
+        
+        const expandBtn = document.getElementById('expand-chat-btn');
+        if (expandBtn) expandBtn.style.display = 'none';
+
+        // --- איפוס תצוגה: ממרכז את הצ'אט מחדש ---
+        const container = document.querySelector('.main-container');
+        const resizer = document.getElementById('drag-resizer');
+
+        // 1. מבטל את תצוגת הפיצול של המסך הראשי
+        if (container) {
+            container.style.display = 'block'; 
+        }
+
+        // 2. מסתיר את אזור המערכת וקו הגרירה
+        if (scheduleSection) {
+            scheduleSection.style.display = 'none';
+        }
+        if (resizer) {
+            resizer.style.display = 'none';
+        }
+
+        // 3. ממרכז את הצ'אט לאמצע המסך (בדיוק כמו בכניסה הראשונה)
+        if (chatSection) {
+            chatSection.style.display = 'block';
+            chatSection.style.width = '100%';
+            chatSection.style.maxWidth = '800px'; 
+            chatSection.style.margin = '0 auto'; 
+            chatSection.style.minWidth = '0'; // מבטל את המינימום שהגדרנו לפיצול קודם
+        }
+    }
+    
+async function loadSpecificSession(sessionId, semesterStr) {
+        // 1. קודם כל סוגרים את התפריט ומעדכנים את הסמסטר הפעיל
+        document.getElementById('history-sidebar').style.right = '-320px';
+        const btn = Array.from(document.querySelectorAll('.semester-btn')).find(b => b.innerText.includes(semesterStr));
+        if (btn) setSemester(semesterStr, btn); // שים לב: הפעולה הזו מציירת מחדש את הרשימה!
+
+        // 2. מיד מעדכנים את הזיכרון, כדי שהאתר ידע שזו השיחה שנבחרה
+        semesterData[currentSemester].sessionId = sessionId;
+
+        // 3. רק עכשיו (אחרי שהרשימה צוירה מחדש), מנקים סימונים וצובעים את השורה בכחול
+        document.querySelectorAll('.history-list-item').forEach(li => {
+            li.style.backgroundColor = 'transparent';
+            li.style.borderRightColor = 'transparent';
+        });
+        const activeItem = document.getElementById(`history-item-${sessionId}`);
+        if (activeItem) {
+            activeItem.style.backgroundColor = '#333';
+            activeItem.style.borderRightColor = 'var(--primary-green)'; // פס כחול בולט
+        }
+
+        const historyDiv = document.getElementById('chat-history');
+        historyDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#888;"> שולף נתונים מהארכיון... </div>';
+
+        try {
+            const response = await fetch(`${API_BASE}/api/history/session/${sessionId}`);
+            if (!response.ok) throw new Error("לא הצלחתי למשוך נתונים");
+            
+            const data = await response.json();
+            
+            // עיצוב נקי לכותרת השחזור (בלי קופסה כחולה)
+            historyDiv.innerHTML = `<div style="text-align: center; color: var(--primary-green); font-weight: bold; font-size: 16px; margin: 20px 0;">היסטוריה שוחזרה בהצלחה!</div>`;
+            semesterData[currentSemester].history = []; 
+
+            if (data.messages) {
+                data.messages.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    
+                    if (msg.sender === 'user') {
+                        // חיבור מחלקות ה-CSS מהעיצוב החדש שלנו
+                        msgDiv.className = 'message user-message';
+                        msgDiv.innerText = msg.message_text;
+                        semesterData[currentSemester].history.push({ role: "user", parts: [{ text: msg.message_text }] });
+                    } else {
+                        // חיבור מחלקות ה-CSS עבור הודעת הבוט
+                        msgDiv.className = 'message system-message';
+                        let cleanText = msg.message_text.replace(/```json[\s\S]*?```/g, '').trim();
+                        msgDiv.innerText = cleanText || "הנה המערכת שהרכבתי עבורך:";
+                        semesterData[currentSemester].history.push({ role: "model", parts: [{ text: msg.message_text }] });
+                    }
+                    historyDiv.appendChild(msgDiv);
+                });
+            }
+            
+            semesterData[currentSemester].chatHTML = historyDiv.innerHTML;
+            historyDiv.scrollTop = historyDiv.scrollHeight;
+
+            if (data.schedules) {
+                semesterData[currentSemester].schedulesData = data.schedules;
+                semesterData[currentSemester].titles = data.titles || {};
+                semesterData[currentSemester].gradesData = data.grades || [];
+                semesterData[currentSemester].examsData = data.exams || [];
+
+                // שואבים מהשרת איזו חלופה המשתמש שמר
+                const savedAlt = data.selected_alt || data.saved_alt_key || data.alt_key || null;
+
+                if (data.titles) {
+                    const t1 = document.getElementById('tab-alt1');
+                    const t2 = document.getElementById('tab-alt2');
+                    const t3 = document.getElementById('tab-alt3');
+                    
+                    // העיצוב החדש והמודרני לוי של החלופה הנבחרת
+const checkBadge = `<span class="saved-badge" style="display: inline-flex; align-items: center; justify-content: center; background-color: #dcfce7; color: var(--primary-green); border-radius: 50%; width: 18px; height: 18px; margin-right: 6px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.15);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>`;                    
+                    // מכניסים את השמות של החלופות ומוסיפים את הסמל החדש למי שנשמר!
+                    if(t1) t1.innerHTML = (data.titles.alt1 || "חלופה 1") + (savedAlt === 'alt1' ? checkBadge : '');
+                    if(t2) t2.innerHTML = (data.titles.alt2 || "חלופה 2") + (savedAlt === 'alt2' ? checkBadge : '');
+                    if(t3) t3.innerHTML = (data.titles.alt3 || "חלופה 3") + (savedAlt === 'alt3' ? checkBadge : '');
+                }
+
+                // מציירים את הטבלאות, ושולחים 'true' לזו שנשמרה כדי שתקבל את כפתור "המערכת נבחרה"
+                if (data.schedules.alt1) renderScheduleTable(data.schedules.alt1, 'alt1', savedAlt === 'alt1');
+                if (data.schedules.alt2) renderScheduleTable(data.schedules.alt2, 'alt2', savedAlt === 'alt2');
+                if (data.schedules.alt3) renderScheduleTable(data.schedules.alt3, 'alt3', savedAlt === 'alt3');
+                
+                renderGrades(data.grades || []);
+                renderExams(data.exams || []);
+                
+                showSchedule();
+                
+                // --- הקסם: פותח אוטומטית את החלופה השמורה במקום תמיד את חלופה 1! ---
+                if (savedAlt && (savedAlt === 'alt1' || savedAlt === 'alt2' || savedAlt === 'alt3')) {
+                    showAlternative(savedAlt);
+                } else {
+                    showAlternative('alt1'); // אם אין חלופה שמורה, יפתח את הראשונה
+                }
+            }
+
+        } catch (error) {
+            historyDiv.innerHTML = `<div style="color:red; text-align:center; padding:20px;">❌ שגיאה בשחזור ההיסטוריה: ${error.message}</div>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const storedUser = localStorage.getItem('currentUser');
+        if (!storedUser) {
+            window.location.href = 'login.html'; 
+            return;
+        }
+
+        const user = JSON.parse(storedUser);
+        const greetingElement = document.getElementById('student-greeting');
+        if (greetingElement) greetingElement.innerText = user.name;
+
+        for (let i = 1; i <= 3; i++) {
+            semesterData[i].history.push({ 
+                role: "user", 
+                parts: [{ text: `שלום, אלו הפרטים האישיים שלי: ${JSON.stringify(user)}. אנא השתמש בהם.` }] 
+            });
+            semesterData[i].history.push({ 
+                role: "model", 
+                parts: [{ text: `הבנתי לחלוטין, ${user.name}! קלטתי את הפרטים. אני מוכן לעזור לך לבנות את המערכת לסמסטר ${i}.` }] 
+            });
+        }
+        
+        document.getElementById('chat-history').innerHTML = semesterData[1].chatHTML;
+        loadHistorySidebar(); 
+    });
+
+    function handleLogout() {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html'; 
+    }
+
+    // פתיחה וסגירה של תפריט ה-3 נקודות
+    function toggleMenu(event, sessionId) {
+        event.stopPropagation();
+        // סוגר תפריטים פתוחים אחרים
+        document.querySelectorAll('.action-menu').forEach(menu => {
+            if (menu.id !== `menu-${sessionId}`) menu.style.display = 'none';
+        });
+        const menu = document.getElementById(`menu-${sessionId}`);
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // סגירת התפריט בלחיצה בכל מקום אחר במסך
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.action-menu').forEach(menu => menu.style.display = 'none');
+    });
+
+// פונקציית מחיקה (בלי חלון התראה - מוחק מיד)
+    async function deleteSession(sessionId) {
+        try {
+            await fetch(`${API_BASE}/api/history/session/${sessionId}`, { method: 'DELETE' });
+            refreshHistorySidebar();
+            
+            // אם זו השיחה שפתוחה כרגע במסך, ננקה אותו
+            if (semesterData[currentSemester].sessionId === sessionId) {
+                startNewSession();
+            }
+        } catch (err) { console.error('שגיאה במחיקה'); }
+    }
+
+    // פונקציית שינוי שם (עריכה בתוך השורה עצמה)
+    async function renameSession(sessionId, oldTitle) {
+        const titleSpan = document.getElementById(`title-${sessionId}`);
+        if (!titleSpan) return;
+
+        // סוגר את תפריט ה-3 נקודות כדי שלא יפריע
+        document.querySelectorAll('.action-menu').forEach(menu => menu.style.display = 'none');
+
+        // שותל שדה טקסט קטן ויפה בדיוק במקום של הטקסט הישן
+        titleSpan.innerHTML = `<input type="text" id="edit-input-${sessionId}" value="${oldTitle}" 
+            style="background: #222; color: white; border: 1px solid var(--primary-green); border-radius: 4px; padding: 2px 5px; font-size: 0.95rem; width: 80%; outline: none;"
+            onclick="event.stopPropagation()">`; // מונע טעינה של השיחה בעת לחיצה על השדה
+            
+        const inputField = document.getElementById(`edit-input-${sessionId}`);
+        inputField.focus();
+
+        // מאזין למקשים: אנטר לשמירה, אסקייפ לביטול
+        inputField.addEventListener('keydown', async function(e) {
+            if (e.key === 'Enter') {
+                const newTitle = inputField.value.trim();
+                
+                // אם השדה ריק או שלא השתנה כלום, נבטל
+                if (!newTitle || newTitle === oldTitle) {
+                    titleSpan.innerText = oldTitle; 
+                    return;
+                }
+                
+                // שולחים לשרת לשמור את השם החדש
+                try {
+                    const response = await fetch(`${API_BASE}/api/history/session/${sessionId}/rename`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: newTitle })
+                    });
+                    
+                    if (response.ok) {
+                        titleSpan.innerText = newTitle; // מעדכן את התצוגה במקום
+                        refreshHistorySidebar(); // סנכרון שקט מול השרת
+                    } else {
+                        titleSpan.innerText = oldTitle;
+                    }
+                } catch (err) { 
+                    console.error('שגיאה בשינוי שם'); 
+                    titleSpan.innerText = oldTitle;
+                }
+            } else if (e.key === 'Escape') {
+                titleSpan.innerText = oldTitle; // ביטול וחזרה לשם המקורי
+            }
+        });
+        
+        // אם המשתמש לוחץ בעכבר במקום אחר במסך (יוצא מהשדה), העריכה מתבטלת
+        inputField.addEventListener('blur', function() {
+            titleSpan.innerText = oldTitle;
+        });
+    }
+
+    // פונקציית הצמדה
+    async function pinSession(sessionId, pinStatus) {
+        try {
+            await fetch(`${API_BASE}/api/history/session/${sessionId}/pin`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_pinned: pinStatus })
+            });
+            refreshHistorySidebar();
+        } catch (err) { alert('שגיאה בהצמדה'); }
+    }
+
+    // פונקציית עזר למשיכת הרשימה מחדש אחרי כל פעולה
+    function refreshHistorySidebar() {
+        const storedUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (storedUser && storedUser.id) {
+            fetch(`${API_BASE}/api/history/${storedUser.id}`)
+                .then(res => res.json())
+                .then(sessions => {
+                    renderHistoryList(sessions);
+                    
+                    // מחזיר את הפס הכחול לשיחה הפעילה אחרי הרענון
+                    setTimeout(() => {
+                        const currentSessionId = semesterData[currentSemester].sessionId;
+                        if(currentSessionId) {
+                            const activeItem = document.getElementById(`history-item-${currentSessionId}`);
+                            if (activeItem) {
+                                activeItem.style.backgroundColor = '#333';
+                                activeItem.style.borderRightColor = 'var(--primary-green)';
+                            }
+                        }
+                    }, 50);
+                })
+                .catch(err => console.error(err));
+        }
+    }
+// --- שליטה על מקש ה-Enter בתיבת ההודעות ---
+    document.getElementById('user-input').addEventListener('keydown', function(event) {
+        // בודקים אם נלחץ אנטר *בלי* מקש ה-Shift
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // עוצר את ירידת השורה הטבעית
+            
+            // שולח את ההודעה רק אם יש בה טקסט אמיתי
+            if (this.value.trim() !== '') {
+                addMessage(); 
+            }
+        }
+        // אם לחצת Shift + Enter, הקוד לא מתערב והדפדפן פשוט מוריד שורה לבד!
+    });
+
+    // --- משתנים גלובליים למצב המסך ---
+    let isChatFullScreen = false;
+    let isScheduleFullScreen = false;
+
+   function resetSplitScreen() {
+        const chatSection = document.getElementById('chat-section');
+        const scheduleSection = document.getElementById('schedule-section');
+        const container = document.querySelector('.main-container');
+
+        isChatFullScreen = false;
+        isScheduleFullScreen = false;
+
+        // יוצר פס גרירה (Resizer) דינמית אם עדיין לא קיים
+        let resizer = document.getElementById('drag-resizer');
+        if (!resizer && container) {
+            resizer = document.createElement('div');
+            resizer.id = 'drag-resizer';
+            resizer.title = 'גרור ימינה ושמאלה לשינוי גודל';
+            resizer.style.cssText = "width: 6px; cursor: ew-resize; background-color: #cbd5e1; border-radius: 4px; transition: background 0.2s; z-index: 10; margin: 0 -5px;";
+            resizer.onmouseover = function() { this.style.backgroundColor = '#94a3b8'; };
+            resizer.onmouseout = function() { this.style.backgroundColor = '#cbd5e1'; };
+            container.insertBefore(resizer, scheduleSection);
+        }
+
+        if (container) {
+            container.style.display = 'flex';
+            container.style.gap = '20px';
+            container.style.alignItems = 'stretch';
+        }
+
+        if (resizer) resizer.style.display = 'block';
+
+        if (chatSection) {
+            chatSection.style.display = 'block';
+            chatSection.style.width = '40%'; // הגדלנו ל-40%
+            chatSection.style.minWidth = '340px'; // הגדלנו טיפה את המינימום
+            chatSection.style.maxWidth = 'none';
+            chatSection.style.margin = '0';
+            chatSection.style.flex = 'none'; 
+        }
+
+        if (scheduleSection) {
+            scheduleSection.style.display = 'block';
+            scheduleSection.style.width = 'auto';
+            scheduleSection.style.maxWidth = 'none';
+            scheduleSection.style.margin = '0';
+            scheduleSection.style.flex = '1'; // לוקח את כל שאר המקום שנשאר (72%)
+        }
+
+        const chatBtn = document.getElementById('expand-chat-btn');
+        if (chatBtn) { chatBtn.innerHTML = '⛶'; chatBtn.title = 'הגדל למסך מלא'; }
+        
+        const scheduleBtn = document.getElementById('expand-schedule-btn');
+        if (scheduleBtn) { scheduleBtn.innerHTML = '⛶'; scheduleBtn.title = 'הגדל למסך מלא'; }
+    }
+
+    function toggleChatFullScreen() {
+        if (isChatFullScreen) { resetSplitScreen(); return; }
+        
+        isChatFullScreen = true;
+        isScheduleFullScreen = false;
+
+        const chatSection = document.getElementById('chat-section');
+        const scheduleSection = document.getElementById('schedule-section');
+        const container = document.querySelector('.main-container');
+        const resizer = document.getElementById('drag-resizer');
+
+        if (container) container.style.display = 'block';
+        if (scheduleSection) scheduleSection.style.display = 'none';
+        if (resizer) resizer.style.display = 'none'; // מעלים את הפס
+
+        if (chatSection) {
+            chatSection.style.display = 'block';
+            chatSection.style.width = '100%';
+            chatSection.style.maxWidth = '800px';
+            chatSection.style.margin = '0 auto';
+        }
+
+        const chatBtn = document.getElementById('expand-chat-btn');
+        if (chatBtn) { chatBtn.innerHTML = '🗗'; chatBtn.title = 'חזור לתצוגה מפוצלת'; }
+    }
+
+    function toggleScheduleFullScreen() {
+        if (isScheduleFullScreen) { resetSplitScreen(); return; }
+
+        isScheduleFullScreen = true;
+        isChatFullScreen = false;
+
+        const chatSection = document.getElementById('chat-section');
+        const scheduleSection = document.getElementById('schedule-section');
+        const container = document.querySelector('.main-container');
+        const resizer = document.getElementById('drag-resizer');
+
+        if (container) container.style.display = 'block';
+        if (chatSection) chatSection.style.display = 'none';
+        if (resizer) resizer.style.display = 'none'; // מעלים את הפס
+
+        if (scheduleSection) {
+            scheduleSection.style.display = 'block';
+            scheduleSection.style.width = '100%';
+            scheduleSection.style.maxWidth = '1200px';
+            scheduleSection.style.margin = '0 auto';
+            scheduleSection.style.flex = 'none';
+        }
+
+        const scheduleBtn = document.getElementById('expand-schedule-btn');
+        if (scheduleBtn) { scheduleBtn.innerHTML = '🗗'; scheduleBtn.title = 'חזור לתצוגה מפוצלת'; }
+    }
+
+    // ==========================================
+    // --- לוגיקת הגרירה וההזזה (Drag & Resize) ---
+    // ==========================================
+    let isResizing = false;
+
+    document.addEventListener('mousedown', function(e) {
+        if (e.target.id === 'drag-resizer') {
+            isResizing = true;
+            document.body.style.cursor = 'ew-resize'; // סמן חיצים
+            
+            const chatSection = document.getElementById('chat-section');
+            const scheduleSection = document.getElementById('schedule-section');
+            
+            // הפתרון לקפיצות ולתקיעות: 
+            // מבטלים את האנימציות ואת גמישות ה-flex כל עוד הלחצן לחוץ!
+            if (chatSection) {
+                chatSection.style.pointerEvents = 'none';
+                chatSection.style.transition = 'none'; // מכבה אנימציה
+                chatSection.style.flex = 'none'; // מכריח את הצ'אט להקשיב לרוחב שאנחנו קובעים
+            }
+            if (scheduleSection) {
+                scheduleSection.style.pointerEvents = 'none';
+                scheduleSection.style.transition = 'none';
+            }
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        
+        const container = document.querySelector('.main-container');
+        const chatSection = document.getElementById('chat-section');
+        if (!container || !chatSection) return;
+
+        const containerRect = container.getBoundingClientRect();
+        
+        // חישוב המרחק של העכבר מהקצה הימני של המסך (מותאם לעברית RTL)
+        let newChatWidth = containerRect.right - e.clientX;
+        
+        // גבולות: מונע מהמסכים להעלם או להיות צרים מדי
+        if (newChatWidth < 340) newChatWidth = 340; 
+        if (newChatWidth > containerRect.width - 450) newChatWidth = containerRect.width - 450; 
+
+        // המרה לאחוזים והחלה מיידית
+        const newWidthPercent = (newChatWidth / containerRect.width) * 100;
+        chatSection.style.width = newWidthPercent + '%';
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = ''; // מחזיר סמן רגיל
+            
+            const chatSection = document.getElementById('chat-section');
+            const scheduleSection = document.getElementById('schedule-section');
+            
+            // מדליק בחזרה את הכל כשמשחררים את העכבר
+            if (chatSection) {
+                chatSection.style.pointerEvents = '';
+                chatSection.style.transition = ''; 
+            }
+            if (scheduleSection) {
+                scheduleSection.style.pointerEvents = '';
+                scheduleSection.style.transition = '';
+            }
+        }
+    });
+   async function chooseAlternative(clickedButton, altKey) {
+        // 1. קודם כל, נאפס חלופות אחרות שאולי נבחרו קודם (מחזיר אותן לכפתור הרגיל)
+        document.querySelectorAll('.selected-action-group').forEach(group => {
+            const key = group.getAttribute('data-altkey');
+            group.outerHTML = `<button class="select-alt-button" onclick="chooseAlternative(this, '${key}')" style="margin: 0; background-color: var(--primary-green); color: white; border-radius: 50px; padding: 12px 24px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; font-size: 15px;">סמן כמערכת מועדפת</button>`;
+        });
+
+        // נאפס גם כפתורים רגילים למקרה של מעברים
+        document.querySelectorAll('.select-alt-button').forEach(btn => {
+            btn.innerHTML = 'סמן כמערכת מועדפת';
+        });
+
+        // 2. הפעלת הכפתור שנלחץ
+        const originalHTML = clickedButton.innerHTML;
+        clickedButton.innerHTML = ' שומר...';
+
+        try {
+            const currentSessionId = semesterData[currentSemester].sessionId;
+            if (!currentSessionId) throw new Error("לא נמצא מזהה שיחה פתוחה");
+            
+            const response = await fetch(`${API_BASE}/api/schedule/select`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: parseInt(currentSessionId),
+                    alt_key: altKey
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // הקסם למטה: מחליפים את הכפתור ב"קבוצת הכפתורים" של ההצלחה והביטול!
+                clickedButton.outerHTML = `
+                    <div class="selected-action-group" data-altkey="${altKey}" style="display: flex; gap: 10px; align-items: center;">
+                        <button style="display: flex; align-items: center; gap: 8px; background-color: #e8f4ed; color: #157a5c; border: 1px solid #cce5d8; border-radius: 50px; padding: 10px 24px; font-weight: bold; cursor: default; font-size: 15px;">
+                            המערכת נבחרה כמועדפת
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </button>
+                        <button onclick="cancelAlternative(this.parentElement, '${altKey}')" style="display: flex; align-items: center; gap: 8px; background-color: #ffffff; color: #64748b; border: 1px solid #e2e8f0; border-radius: 50px; padding: 10px 20px; font-weight: 500; cursor: pointer; transition: 0.2s; font-size: 15px;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='#ffffff'">
+                            ביטול
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                        </button>
+                    </div>
+                `;
+                
+                // --- תוספת: עדכון הלשוניות באופן מיידי! ---
+                // מנקים קודם את הסמל משאר הלשוניות בצורה חכמה (לפי המחלקה שלו)
+                document.querySelectorAll('.saved-badge').forEach(badge => badge.remove());
+                
+                // העיצוב החדש לוי
+const checkBadge = `<span class="saved-badge" style="display: inline-flex; align-items: center; justify-content: center; background-color: #dcfce7; color: var(--primary-green); border-radius: 50%; width: 18px; height: 18px; margin-right: 6px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.15);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>`;                
+                // מוסיפים את הסמל ללשונית שנבחרה עכשיו
+                const activeTab = document.getElementById('tab-' + altKey);
+                if(activeTab) activeTab.innerHTML += checkBadge;
+                // ------------------------------------------
+                // ------------------------------------------
+
+                refreshHistorySidebar();
+            } else {
+                clickedButton.innerHTML = '❌ שגיאה בשמירה';
+                setTimeout(() => { clickedButton.innerHTML = originalHTML; }, 2000);
+            }
+
+        } catch (error) {
+            console.error("שגיאת תקשורת מול השרת:", error);
+            clickedButton.innerHTML = '❌ שגיאת תקשורת';
+            setTimeout(() => { clickedButton.innerHTML = originalHTML; }, 2000);
+        }
+    }
+
+    async function cancelAlternative(containerElement, altKey) {
+        // מחזיר מיד את הממשק אחורה (לכפתור הירוק הרגיל)
+        containerElement.outerHTML = `<button class="select-alt-button" onclick="chooseAlternative(this, '${altKey}')" style="margin: 0; background-color: var(--primary-green); color: white; border-radius: 50px; padding: 12px 24px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; font-size: 15px;">סמן כמערכת מועדפת</button>`;
+        
+        // --- תוספת: מוריד את הוי מהלשונית למעלה באותה שנייה ---
+        const activeTab = document.getElementById('tab-' + altKey);
+        if(activeTab) {
+            const badge = activeTab.querySelector('.saved-badge');
+            if(badge) badge.remove(); // מוחק את העיגול הירוק באלפית שנייה
+        }
+        // -------------------------------------------------------
+
+        try {
+            const currentSessionId = semesterData[currentSemester].sessionId;
+            if (currentSessionId) {
+                const activeSidebarItem = document.getElementById(`history-item-${currentSessionId}`);
+                if (activeSidebarItem) {
+                    const heartElement = activeSidebarItem.querySelector('span[title="מערכת נשמרה"]');
+                    if (heartElement) heartElement.remove(); 
+                }
+
+                await fetch(`${API_BASE}/api/schedule/select`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: parseInt(currentSessionId),
+                        alt_key: "" 
+                    })
+                });
+                
+                setTimeout(() => {
+                    refreshHistorySidebar();
+                }, 500);
+            }
+        } catch(e) { 
+            console.error("שגיאה בביטול השמירה מול השרת", e); 
+        }
+    }
+</script>
+</body>
+</html>
