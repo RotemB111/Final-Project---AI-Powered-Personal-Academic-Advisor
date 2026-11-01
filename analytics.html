@@ -218,7 +218,7 @@
         document.getElementById('kpi-labeled').textContent = s.labeled.toLocaleString('he-IL');
         document.getElementById('kpi-labeled-sub').textContent = `מתוך ${s.total.toLocaleString('he-IL')} סשנים עם מערכות`;
         const done = Math.min(d.retrain.new_labeled_since_last_run, d.retrain.step);
-        document.getElementById('kpi-progress').textContent = `${done} / ${d.retrain.step}`;
+        document.getElementById('kpi-progress').textContent = `${done} מתוך ${d.retrain.step}`;
         document.getElementById('kpi-progress-bar').style.width = `${100 * done / d.retrain.step}%`;
         document.getElementById('kpi-students').textContent = d.students.toLocaleString('he-IL');
         document.getElementById('kpi-sessions-sub').textContent = `${d.runs.length} אימונים שמורים`;
