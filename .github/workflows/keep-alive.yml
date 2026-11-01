@@ -11,7 +11,7 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     env:
-      API_URL: ${{ vars.API_URL || 'https://course-scheduler-api.onrender.com' }}
+      API_URL: ${{ vars.API_URL || 'https://course-scheduler-api-jnh5.onrender.com' }}
     steps:
       - name: Ping /api/health (allows ~2 minutes for a cold start)
         run: |
