@@ -26,7 +26,7 @@ if genai is None:
         legacy_genai = None
 
 from builder import ScheduleBuilder
-from optimizer import ScheduleOptimizer
+from optimizer import ScheduleOptimizer, DEFAULT_CRITERION_WEIGHTS
 
 load_dotenv()
 
@@ -2772,7 +2772,7 @@ class RegisterRequest(BaseModel):
     password: str
     program_id: int
     study_year: int
-    national_id: Optional[str] = None  # no such column in students; accepted and ignored
+    email: Optional[str] = None  # no such column in students; accepted and ignored
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -2800,6 +2800,13 @@ async def register(req: RegisterRequest):
 
         last = supabase.table('students').select('student_id').order('student_id', desc=True).limit(1).execute().data
         next_id = (last[0]['student_id'] + 1) if last else 1
+
+        # Like the existing students, a new student gets the program's specializations,
+        # so the chat can also offer their elective courses.
+        specs = supabase.table('specialization').select('specialization_id') \
+            .eq('program_id', req.program_id).order('specialization_id').execute().data or []
+        spec_ids = [s['specialization_id'] for s in specs]
+
         supabase.table('students').insert({
             "student_id": next_id,
             "user_name": user_name,
@@ -2807,6 +2814,8 @@ async def register(req: RegisterRequest):
             "study_year": req.study_year,
             "password": req.password,
             "academic_status": "Active",
+            "primary_specialization_id": spec_ids[0] if spec_ids else None,
+            "secondary_specialization_id": spec_ids[1] if len(spec_ids) > 1 else None,
         }).execute()
         return {"success": True, "student_id": next_id}
     except Exception as e:
@@ -2826,6 +2835,106 @@ async def update_profile(student_id: int, req: ProfileUpdateRequest):
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+ANALYTICS_CACHE_SECONDS = 60
+_analytics_cache = {"data": None, "loaded_at": 0.0}
+CRITERIA_KEYS = ["G", "D", "LD", "T", "LW", "C", "A"]
+
+
+def _fetch_all_rows(table, columns):
+    rows, start = [], 0
+    while True:
+        page = supabase.table(table).select(columns).range(start, start + 999).execute().data or []
+        rows += page
+        if len(page) < 1000:
+            return rows
+        start += 1000
+
+
+def _build_analytics():
+    import analytics_pipeline_final as ml_pipeline
+
+    score_cols = [f"score_{k.lower()}" for k in CRITERIA_KEYS]
+    schedules = _fetch_all_rows('generated_schedules', "session_id,alt_key,is_selected,created_at," + ",".join(score_cols))
+    runs = supabase.table('ml_criterion_weights').select('*').order('created_at').execute().data or []
+
+    sessions = {}
+    for r in schedules:
+        sessions.setdefault(r["session_id"], []).append(r)
+
+    counts = {"total": len(sessions), "labeled": 0, "unlabeled": 0, "single_alternative": 0, "invalid": 0}
+    selected_alt = {"alt1": 0, "alt2": 0, "alt3": 0}
+    sums = {"selected": [0.0] * 7, "rejected": [0.0] * 7}
+    n = {"selected": 0, "rejected": 0}
+    labeled_created = []
+
+    for rows in sessions.values():
+        chosen = [r for r in rows if r.get("is_selected")]
+        if len(rows) > 3 or len(chosen) > 1:
+            counts["invalid"] += 1
+        elif len(rows) < ml_pipeline.MIN_ALTERNATIVES_FOR_TRAINING:
+            counts["single_alternative"] += 1
+        elif not chosen:
+            counts["unlabeled"] += 1
+        else:
+            counts["labeled"] += 1
+            labeled_created.append(min(r["created_at"] for r in rows))
+            selected_alt[chosen[0]["alt_key"]] = selected_alt.get(chosen[0]["alt_key"], 0) + 1
+            for r in rows:
+                group = "selected" if r.get("is_selected") else "rejected"
+                n[group] += 1
+                for i, col in enumerate(score_cols):
+                    sums[group][i] += float(r.get(col) or 0)
+
+    avg_scores = {
+        group: {k: round(sums[group][i] / n[group], 4) if n[group] else None for i, k in enumerate(CRITERIA_KEYS)}
+        for group in sums
+    }
+
+    last_run_at = max((r["created_at"] for r in runs), default=None)
+    from datetime import datetime as _dt
+
+    def _ts(value):
+        return _dt.fromisoformat(str(value).replace("Z", "+00:00").replace(" ", "T"))
+
+    new_labeled = len(labeled_created) if not last_run_at else sum(1 for c in labeled_created if _ts(c) > _ts(last_run_at))
+
+    def _run(r):
+        return {
+            "run_id": r.get("run_id"),
+            "model_name": r.get("model_name"),
+            "created_at": r.get("created_at"),
+            "is_best_run": bool(r.get("is_best_run")),
+            "num_training_records": r.get("num_training_records"),
+            "semi_supervised_used": bool(r.get("semi_supervised_used")),
+            "metrics": {m: (float(r[m]) if r.get(m) is not None else None)
+                        for m in ["accuracy", "precision", "recall", "f1_score", "auc"]},
+            "weights": {k: (float(r[f"weight_{k.lower()}"]) if r.get(f"weight_{k.lower()}") is not None else None)
+                        for k in CRITERIA_KEYS},
+        }
+
+    active = next((_run(r) for r in reversed(runs) if r.get("is_best_run")), None)
+    students = supabase.table('students').select('student_id', count='exact').limit(1).execute().count
+
+    return {
+        "generated_at": _dt.now().isoformat(timespec="seconds"),
+        "students": students,
+        "sessions": counts,
+        "selected_alternative": selected_alt,
+        "avg_scores": avg_scores,
+        "retrain": {"step": ml_pipeline.CHECKPOINT_STEP, "new_labeled_since_last_run": new_labeled, "last_run_at": last_run_at},
+        "active_model": active,
+        "default_weights": DEFAULT_CRITERION_WEIGHTS,
+        "runs": [_run(r) for r in runs],
+    }
+
+
+@app.get("/api/analytics")
+async def get_analytics():
+    if not _analytics_cache["data"] or time.time() - _analytics_cache["loaded_at"] > ANALYTICS_CACHE_SECONDS:
+        _analytics_cache.update(data=_build_analytics(), loaded_at=time.time())
+    return _analytics_cache["data"]
 
 
 @app.get("/api/health")

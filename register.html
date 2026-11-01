@@ -26,8 +26,8 @@
         <label>שם משתמש :</label>
         <input type="text" id="user_name" required>
 
-        <label>מייל:</label>
-        <input type="text" id="mail" required>
+        <label>מייל (לא חובה):</label>
+        <input type="email" id="mail">
 
         <label>מסלול לימודים:</label>
         <select id="program_id" required>
@@ -40,9 +40,10 @@
         <label>שנת לימוד:</label>
         <select id="study_year" required>
             <option value="">בחר שנת לימוד</option>
-            <option value="1">שנה ג'</option>
-            <option value="2">שנה ד'</option>
-            <option value="2">אחר</option>
+            <option value="1">שנה א'</option>
+            <option value="2">שנה ב'</option>
+            <option value="3">שנה ג'</option>
+            <option value="4">שנה ד'</option>
         </select>
 
         <label>סיסמה:</label>
@@ -60,17 +61,21 @@
     async function handleRegister(event) {
         event.preventDefault();
 
-        const user_name = document.getElementById('user_name').value;
-        const national_id = document.getElementById('national_id').value;
+        const user_name = document.getElementById('user_name').value.trim();
+        const email = document.getElementById('mail').value.trim();
         const program_id = parseInt(document.getElementById('program_id').value);
         const study_year = parseInt(document.getElementById('study_year').value);
         const password = document.getElementById('password').value;
+
+        const submitBtn = document.querySelector('#registerForm button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'נרשם... (בפעם הראשונה עד דקה)';
 
         try {
             // הרישום מתבצע בשרת (מזהה חדש + שמירה), כך שהדפדפן לא ניגש לטבלת הסטודנטים
             const newStudent = {
                 user_name: user_name,
-                national_id: national_id,
+                email: email,
                 program_id: program_id,
                 study_year: study_year,
                 password: password
@@ -117,6 +122,9 @@
                 title: 'שגיאה',
                 text: 'אירעה תקלה בתהליך הרישום: ' + err.message,
             });
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'בצע רישום';
         }
     }
 </script>

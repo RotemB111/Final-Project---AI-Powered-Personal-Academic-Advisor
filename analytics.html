@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אנליטיקה ולמידת מכונה</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        .viz-root {
+            --surface-1: #ffffff;
+            --text-primary: #0f2318;
+            --text-secondary: #3d5a4a;
+            --text-muted: #7a9a8a;
+            --grid: #eaf2ee;
+            --series-1: #2a78d6;   /* categorical slot 1 */
+            --series-2: #eb6834;   /* categorical slot 2 */
+            --single: #0f6b4f;     /* single-series charts: site brand */
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 16px 48px;
+        }
+        .viz-root h1 { margin: 0 0 6px; font-size: 1.7rem; }
+        .viz-root .lead { color: var(--text-secondary); margin: 0 0 24px; }
+        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .kpi, .card {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+        .kpi { padding: 16px 18px; }
+        .kpi .label { color: var(--text-muted); font-size: .85rem; }
+        .kpi .value { font-size: 1.7rem; font-weight: 700; margin-top: 4px; }
+        .kpi .sub { color: var(--text-secondary); font-size: .85rem; margin-top: 2px; }
+        .progress { height: 8px; background: var(--grid); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+        .progress > div { height: 100%; background: var(--single); border-radius: 4px; }
+        .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 18px; }
+        .card { padding: 18px 20px; }
+        .card h2 { font-size: 1.1rem; margin: 0 0 4px; }
+        .card .hint { color: var(--text-muted); font-size: .85rem; margin: 0 0 12px; }
+        .chart-box { position: relative; height: 300px; }
+        .legend { display: flex; gap: 16px; font-size: .85rem; color: var(--text-secondary); margin-bottom: 8px; flex-wrap: wrap; }
+        .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-left: 6px; background: var(--c); vertical-align: middle; }
+        table.data { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        table.data th, table.data td { padding: 8px 10px; border-bottom: 1px solid var(--grid); text-align: right; }
+        table.data th { color: var(--text-muted); font-weight: 500; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; background: var(--primary-light); color: var(--primary-dark); font-size: .8rem; font-weight: 600; }
+        .table-scroll { overflow-x: auto; }
+        details { margin-top: 10px; font-size: .85rem; color: var(--text-secondary); }
+        .status { padding: 40px; text-align: center; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div>אנליטיקה ולמידת מכונה</div>
+    <div class="nav-links">
+        <a href="dashboard.html">לצ'אט</a>
+        <a href="index.html">דף הבית</a>
+    </div>
+</div>
+
+<main class="viz-root">
+    <h1>איך המערכת לומדת מהבחירות שלכם</h1>
+    <p class="lead">בכל פעם שסטודנט בוחר אחת מהחלופות, הבחירה נשמרת. כל 100 בחירות חדשות מאומנים כמה מודלים, והמודל הטוב ביותר קובע את המשקולות שלפיהן הצ'אט מדרג מערכות.</p>
+
+    <div id="status" class="status">טוען נתונים... (אם השרת ישן, זה עשוי לקחת עד דקה)</div>
+
+    <div id="content" hidden>
+        <section class="kpis">
+            <div class="kpi"><div class="label">המודל הפעיל</div><div class="value" id="kpi-model">–</div><div class="sub" id="kpi-model-sub"></div></div>
+            <div class="kpi"><div class="label">סשנים עם בחירה אמיתית</div><div class="value" id="kpi-labeled">–</div><div class="sub" id="kpi-labeled-sub"></div></div>
+            <div class="kpi"><div class="label">התקדמות לאימון הבא</div><div class="value" id="kpi-progress">–</div><div class="progress"><div id="kpi-progress-bar" style="width:0"></div></div></div>
+            <div class="kpi"><div class="label">סטודנטים במערכת</div><div class="value" id="kpi-students">–</div><div class="sub" id="kpi-sessions-sub"></div></div>
+        </section>
+
+        <section class="card" style="margin-bottom:18px">
+            <h2>משקולות הדירוג: מה המודל למד מול ברירת המחדל</h2>
+            <p class="hint">משקל גבוה = הקריטריון משפיע יותר על דירוג החלופות. הסכום של כל סדרה הוא 1.</p>
+            <div class="legend"><span style="--c:var(--series-1)">משקולות שנלמדו (המודל הפעיל)</span><span style="--c:var(--series-2)">משקולות קבועות (לפני למידה)</span></div>
+            <div class="chart-box"><canvas id="weightsChart" aria-label="השוואת משקולות לפי קריטריון"></canvas></div>
+            <details><summary>הצג כטבלה</summary><div class="table-scroll"><table class="data" id="weightsTable"></table></div></details>
+        </section>
+
+        <div class="grid2">
+            <section class="card">
+                <h2>איזו חלופה סטודנטים בוחרים</h2>
+                <p class="hint">בסשנים עם 2–3 חלופות ובחירה אחת.</p>
+                <div class="chart-box" style="height:220px"><canvas id="altChart" aria-label="התפלגות החלופה שנבחרה"></canvas></div>
+            </section>
+            <section class="card">
+                <h2>איכות הנתונים לאימון</h2>
+                <p class="hint">רק סשנים עם בחירה אמיתית משמשים לאימון.</p>
+                <div class="chart-box" style="height:220px"><canvas id="dataChart" aria-label="סוגי סשנים"></canvas></div>
+            </section>
+        </div>
+
+        <section class="card" style="margin-bottom:18px">
+            <h2>במה החלופה שנבחרה שונה מהחלופות שלא נבחרו</h2>
+            <p class="hint">ממוצע הקנס לכל קריטריון (0 = הכי טוב). פער גדול = הקריטריון מבדיל בין מה שסטודנטים בוחרים למה שהם דוחים.</p>
+            <div class="legend"><span style="--c:var(--series-1)">חלופה שנבחרה</span><span style="--c:var(--series-2)">חלופה שלא נבחרה</span></div>
+            <div class="chart-box"><canvas id="scoresChart" aria-label="ממוצע קנס לפי קריטריון"></canvas></div>
+        </section>
+
+        <section class="card">
+            <h2>היסטוריית האימונים</h2>
+            <p class="hint">בכל אימון נבחר אוטומטית המודל עם ה-AUC הגבוה ביותר. רק המודל המסומן כפעיל משמש את הצ'אט.</p>
+            <div class="table-scroll"><table class="data" id="runsTable"></table></div>
+            <p class="hint" id="generatedAt" style="margin-top:12px"></p>
+        </section>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <p><strong>© מוגש על ידי אופק נתנאל, אור כהן, רותם ברק, מידן מינצס</strong></p>
+</footer>
+
+<script>
+    const CRITERIA = ["G", "D", "LD", "T", "LW", "C", "A"];
+    const CRITERIA_HE = {
+        G: "חלונות", D: "ימי לימוד", LD: "עומס יומי", T: "העדפת שעות",
+        LW: "איזון שבועי", C: "עומס הערכה", A: "נוכחות חובה"
+    };
+    const css = name => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(name).trim();
+    const fmt = (v, d = 3) => v === null || v === undefined ? "–" : Number(v).toFixed(d);
+    const pct = (a, b) => b ? Math.round(100 * a / b) + "%" : "–";
+    const dateHe = s => s ? new Date(s).toLocaleDateString('he-IL') : "–";
+
+    Chart.defaults.font.family = "'Heebo', sans-serif";
+    Chart.defaults.color = '#3d5a4a';
+
+    // Value labels at the end of each bar, only for single-series charts.
+    const endLabels = {
+        id: 'endLabels',
+        afterDatasetsDraw(chart, _args, opts) {
+            if (!opts || !opts.enabled) return;
+            const { ctx } = chart;
+            const meta = chart.getDatasetMeta(0);
+            ctx.save();
+            ctx.fillStyle = css('--text-primary');
+            ctx.font = "500 12px Heebo, sans-serif";
+            ctx.textBaseline = 'middle';
+            meta.data.forEach((bar, i) => {
+                const text = opts.format(chart.data.datasets[0].data[i], i);
+                ctx.textAlign = 'right';
+                ctx.fillText(text, bar.x - 8, bar.y);
+            });
+            ctx.restore();
+        }
+    };
+
+    function baseOptions(extra = {}) {
+        return Object.assign({
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: { legend: { display: false }, tooltip: { rtl: true, textDirection: 'rtl' } },
+            interaction: { mode: 'index', intersect: false },
+        }, extra);
+    }
+
+    function groupedBar(canvasId, seriesA, seriesB, labelA, labelB, digits) {
+        new Chart(document.getElementById(canvasId), {
+            type: 'bar',
+            data: {
+                labels: CRITERIA.map(k => `${CRITERIA_HE[k]} (${k})`),
+                datasets: [
+                    { label: labelA, data: seriesA, backgroundColor: css('--series-1'), borderRadius: 4, borderSkipped: 'start', borderColor: css('--surface-1'), borderWidth: 2 },
+                    { label: labelB, data: seriesB, backgroundColor: css('--series-2'), borderRadius: 4, borderSkipped: 'start', borderColor: css('--surface-1'), borderWidth: 2 },
+                ]
+            },
+            options: baseOptions({
+                scales: {
+                    x: { reverse: true, grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: css('--grid') }, border: { display: false }, ticks: { callback: v => Number(v).toFixed(digits) } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { rtl: true, textDirection: 'rtl', callbacks: { label: c => `${c.dataset.label}: ${fmt(c.raw, digits)}` } }
+                }
+            })
+        });
+    }
+
+    function singleHBar(canvasId, labels, values, format) {
+        new Chart(document.getElementById(canvasId), {
+            type: 'bar',
+            data: { labels, datasets: [{ data: values, backgroundColor: css('--single'), borderRadius: 4, borderSkipped: 'start', barThickness: 22 }] },
+            options: baseOptions({
+                indexAxis: 'y',
+                layout: { padding: { left: 70 } },
+                scales: {
+                    x: { reverse: true, beginAtZero: true, grid: { color: css('--grid') }, border: { display: false } },
+                    y: { position: 'right', grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { rtl: true, textDirection: 'rtl', callbacks: { label: c => format(c.raw, c.dataIndex) } },
+                    endLabels: { enabled: true, format }
+                }
+            }),
+            plugins: [endLabels]
+        });
+    }
+
+    function render(d) {
+        document.getElementById('status').hidden = true;
+        document.getElementById('content').hidden = false;
+        const active = d.active_model;
+        const s = d.sessions;
+
+        document.getElementById('kpi-model').textContent = active ? active.model_name : 'ברירת מחדל';
+        document.getElementById('kpi-model-sub').textContent = active
+            ? `AUC ${fmt(active.metrics.auc)} · אומן ${dateHe(active.created_at)}`
+            : 'עדיין לא בוצע אימון';
+        document.getElementById('kpi-labeled').textContent = s.labeled.toLocaleString('he-IL');
+        document.getElementById('kpi-labeled-sub').textContent = `מתוך ${s.total.toLocaleString('he-IL')} סשנים עם מערכות`;
+        const done = Math.min(d.retrain.new_labeled_since_last_run, d.retrain.step);
+        document.getElementById('kpi-progress').textContent = `${done} / ${d.retrain.step}`;
+        document.getElementById('kpi-progress-bar').style.width = `${100 * done / d.retrain.step}%`;
+        document.getElementById('kpi-students').textContent = d.students.toLocaleString('he-IL');
+        document.getElementById('kpi-sessions-sub').textContent = `${d.runs.length} אימונים שמורים`;
+
+        const learned = CRITERIA.map(k => active ? active.weights[k] : null);
+        const defaults = CRITERIA.map(k => d.default_weights[k]);
+        groupedBar('weightsChart', learned, defaults, 'משקולות שנלמדו', 'משקולות קבועות', 2);
+        document.getElementById('weightsTable').innerHTML =
+            `<tr><th>קריטריון</th><th>שנלמדו</th><th>קבועות</th></tr>` +
+            CRITERIA.map((k, i) => `<tr><td>${CRITERIA_HE[k]} (${k})</td><td>${fmt(learned[i])}</td><td>${fmt(defaults[i])}</td></tr>`).join('');
+
+        const alts = ['alt1', 'alt2', 'alt3'].map(k => d.selected_alternative[k] || 0);
+        const altTotal = alts.reduce((a, b) => a + b, 0);
+        singleHBar('altChart', ['חלופה 1', 'חלופה 2', 'חלופה 3'], alts, v => `${v} (${pct(v, altTotal)})`);
+
+        const kinds = [s.labeled, s.unlabeled, s.single_alternative];
+        singleHBar('dataChart', ['בחירה אמיתית', 'בלי בחירה', 'חלופה אחת בלבד'], kinds, v => `${v} (${pct(v, s.total)})`);
+
+        groupedBar('scoresChart',
+            CRITERIA.map(k => d.avg_scores.selected[k]),
+            CRITERIA.map(k => d.avg_scores.rejected[k]),
+            'נבחרה', 'לא נבחרה', 2);
+
+        const runs = [...d.runs].reverse();
+        document.getElementById('runsTable').innerHTML =
+            `<tr><th>תאריך</th><th>מודל</th><th>AUC</th><th>F1</th><th>Precision</th><th>Recall</th><th>רשומות</th><th></th></tr>` +
+            runs.map(r => `<tr>
+                <td>${dateHe(r.created_at)}</td><td>${r.model_name}</td>
+                <td>${fmt(r.metrics.auc)}</td><td>${fmt(r.metrics.f1_score)}</td>
+                <td>${fmt(r.metrics.precision)}</td><td>${fmt(r.metrics.recall)}</td>
+                <td>${r.num_training_records ?? '–'}</td>
+                <td>${r.is_best_run ? '<span class="badge">פעיל</span>' : ''}</td></tr>`).join('');
+        document.getElementById('generatedAt').textContent = `עודכן: ${new Date(d.generated_at).toLocaleString('he-IL')}`;
+    }
+
+    fetch(`${API_BASE}/api/analytics`)
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(render)
+        .catch(err => {
+            console.error(err);
+            document.getElementById('status').textContent = 'לא הצלחתי לטעון את הנתונים מהשרת. נסו לרענן בעוד דקה.';
+        });
+</script>
+</body>
+</html>
