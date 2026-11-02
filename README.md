@@ -1,53 +1,159 @@
-# WEB
+# AI-Powered Personal Academic Advisor
 
-Backend and dashboard for building student schedules from chat constraints.
+A chat-based assistant that builds a student's semester timetable from plain-language requests (in Hebrew), offers up to three ranked alternatives, and learns from the alternative each student picks.
 
-## AI Token Optimization
+**Live demo:** https://rotemb111.github.io/Final-Project---AI-Powered-Personal-Academic-Advisor/
 
-Recent chat-layer changes reduce Gemini usage in the main `/api/chat` flow.
+| | |
+|---|---|
+| Demo login | `noa.cohen0001` / `demo1234` (or register a new student) |
+| Analytics page | [analytics.html](https://rotemb111.github.io/Final-Project---AI-Powered-Personal-Academic-Advisor/analytics.html) |
+| API | https://course-scheduler-api-jnh5.onrender.com/api/health |
 
-- Obvious requests are parsed locally before calling Gemini, including simple build requests, no-constraint requests, info-only questions, day-off constraints, simple time-window constraints, and window-minimization requests.
-- Saved constraints are merged in backend code instead of being sent to Gemini and copied back in every response.
-- Info-only answers are generated from local course metadata and course offerings instead of sending the full course JSON to Gemini.
-- Final schedule explanations are generated deterministically from builder and optimizer results instead of using a second Gemini response-generation call.
-- The remaining Gemini call is limited to ambiguous current-message constraint extraction, with JSON response mode and `temperature: 0`.
+> The server runs on Render's free tier and sleeps when idle, so the first request can take up to a minute.
 
-Expected impact: common chat requests now use zero Gemini calls, and complex scheduling requests use one compact Gemini call instead of up to three larger calls.
+Built as a university final project. The interface is in Hebrew.
 
-## Constraint Flow
+---
 
-The chat endpoint now normalizes active constraints into a shared `builder_config["hard_constraints"]` list before schedule generation.
+## What it does
 
-- Persisted DB constraints and current-message constraints are merged into one active set.
-- Multi-value constraints are expanded before schedule building, so one payload can represent several values.
-- `prepare_builder_config` converts supported constraints into the generic `hard_constraints` shape: `{ type, importance, payload }`.
-- `ScheduleBuilder` reads the generic list and applies meeting-level constraints such as blocked days, time windows, course-specific day/time rules, and avoided lecturers.
-- Full-schedule constraints such as `daily_load`, `study_days_limit`, and `windows_minimization` are also registered in the generic list and validated after candidate schedules are assembled.
-- Legacy config fields are still populated for compatibility, but the generic list is the shared path for adding future constraints.
-- Lecturer constraints are sanitized before persistence and building: phrases such as `קורסים של רון וולף או של פבל` become separate clean lecturer payloads for `רון וולף` and `פבל`.
-- Day-blocking language such as `לא רוצה ללמוד בימי שלישי` is routed to `day_off` and is not stored as a lecturer name.
-- Day detection supports Hebrew day names with prefixes and conjunctions (`בשלישי`, `ושלישי`), day-letter shorthand (`יום ג'`, `ימי ג וד`), and English weekday aliases (`Tue`, `Thursday`).
+1. **The student describes what they want** – e.g. *"תבנה לי מערכת בלי ימי שני, לא לפני 10:00, עם כמה שפחות חלונות"* ("build me a schedule without Mondays, not before 10:00, with as few gaps as possible").
+2. **The constraints are extracted** from the message and stored for the conversation, so follow-up messages add to or replace them.
+3. **A builder searches every legal combination** of course groups (lecture + tutorial) for the student's mandatory courses that satisfies the hard constraints. If a full schedule is impossible, it falls back to the best partial schedule and explains which courses were left out.
+4. **An optimizer ranks the candidates** using seven weighted penalty criteria and returns the top three, with an explanation of which requests were met.
+5. **The student picks one alternative.** The choice is saved as a label, and after every 100 new choices the ML pipeline retrains and updates the ranking weights.
 
-This means a saved DB constraint is translated into the same structure the Builder uses to filter and validate schedules.
+Students can also keep a chat history, pin and delete conversations, and edit their profile.
 
-Examples supported by the shared flow:
+### Supported constraints
 
-- `בלי רון וולף ופבל` expands into two `lecturer_constraint` entries.
-- `בלי קורסים של עומר פרי ובלי ימי שלישי` expands into one lecturer constraint and one `day_off`.
-- `בלי קורסים של רון וולף או של פבל, אני לא רוצה ללמוד בימי שלישי` expands into two lecturer constraints and one `day_off`.
-- `ללא ימים ראשון ושלישי` expands into two `day_off` entries.
-- A DB payload with `lecturer_names`, `days`, `target_courses`, or similar plural fields is split into individual constraints before application.
+Day off · time window (start after / end before) · fewer gaps between classes · maximum study days · daily load · maximum consecutive hours · avoid or prefer a lecturer · add or remove a course · course-specific day/time preference · allowing a course to be dropped to get a better schedule.
 
-## Schedule Engine Notes
+---
 
-Recent scheduling changes:
+## Architecture
 
-- Failure diagnostics are printed to the backend terminal only. They are not returned in the dashboard JSON payload.
-- The scheduler logs major decisions in English with `[ChatDecision]`, `[ScheduleBuilder]`, `[ScheduleOptimizer]`, and `[ScheduleFailure]` prefixes.
-- `daily_load` is enforced as a hard optimizer constraint, so schedules that exceed `max_daily_hours` are rejected before ranking.
-- If a full mandatory-course schedule is not possible, the builder searches for a partial viable schedule with at least 3 courses.
-- Ranking prefers schedules with more courses first, then uses the optimizer score as the secondary ordering.
-- Course-specific day/time constraints now respect explicit session type, so a lecture constraint does not reject a valid team because its tutorial is on another day.
-- Builder time comparisons are normalized to minutes to avoid false overlap or false non-overlap decisions from string-formatted times like `9:30`.
+```mermaid
+flowchart LR
+    U[Student in browser<br/>GitHub Pages] -->|REST| API[FastAPI server<br/>chat.py on Render]
+    API --> P[Constraint parser<br/>local rules, optional Gemini]
+    P --> B[ScheduleBuilder<br/>builder.py]
+    B --> O[ScheduleOptimizer<br/>optimizer.py]
+    O -->|top 3 alternatives| U
+    U -->|selected alternative| API
+    API <--> DB[(Supabase<br/>PostgreSQL)]
+    API -->|every 100 new choices| ML[ML pipeline<br/>analytics_pipeline_final.py]
+    ML -->|best model's weights| DB
+    DB -->|active weights| O
+```
 
-See [SCHEDULING_ENGINE_CHANGES.md](SCHEDULING_ENGINE_CHANGES.md) for details.
+**Constraint parsing.** Common requests (days, hours, gaps, lecturers, number of days, course changes) are parsed locally with rules, so the demo runs without any LLM calls. Gemini can be switched on (`USE_GEMINI=true`) to handle free-form messages the rules don't recognise.
+
+**Builder.** Depth-first search over course groups with conflict detection, applying hard constraints at the meeting level (days, time windows, lecturers) and at the schedule level (study days, daily load, consecutive hours). It falls back to backup courses and then to partial schedules when no full schedule exists.
+
+**Optimizer.** Each candidate gets a penalty from 0 to 1 per criterion, combined into a weighted score:
+
+| Key | Criterion |
+|---|---|
+| G | Gaps between classes |
+| D | Number of study days |
+| LD | Daily load |
+| T | Fit to preferred hours |
+| LW | Weekly balance |
+| C | Assessment load (exams / projects) |
+| A | Mandatory attendance |
+
+The weights start from fixed defaults and are replaced by the weights learned from student choices.
+
+---
+
+## Learning from student choices
+
+Every alternative shown is stored with its seven penalty scores. When a student selects one, it's labeled as chosen and the others in that session as rejected.
+
+Once 100 new labeled sessions have accumulated, the server retrains in the background (`analytics_pipeline_final.py`):
+
+- Trains **Logistic Regression**, **Random Forest** (grid search) and **XGBoost**, plus a semi-supervised pseudo-labeling pass over unlabeled sessions.
+- Picks the best model by AUC (then F1, recall, precision).
+- Converts its coefficients or feature importances into criterion weights and marks that run as active.
+- The chat starts ranking with the new weights within a few minutes. No redeploy is needed.
+
+The [analytics page](https://rotemb111.github.io/Final-Project---AI-Powered-Personal-Academic-Advisor/analytics.html) shows the active model, learned vs. default weights, which alternative students pick, the constraints they ask for, and the full training history.
+
+### About the demo data
+
+The demo database is seeded with **simulated** usage, not real students. `simulate_sessions.py` ran 400 conversations through the real chat logic, with synthetic student personas that each have hidden preferences and choose between the alternatives. `upload_simulation.py` loaded those sessions into Supabase. The TabPFN run shown as active comes from an offline experiment; the deployed server retrains with the three models listed above. The numbers on the analytics page show how the learning loop works and aren't findings about real students.
+
+---
+
+## Tech stack
+
+- **Backend:** Python 3.11, FastAPI, Uvicorn
+- **Database:** Supabase (PostgreSQL), accessed only from the server
+- **ML:** scikit-learn, XGBoost, pandas, NumPy
+- **Frontend:** HTML, CSS and vanilla JavaScript, with Chart.js for the analytics page
+- **Hosting:** GitHub Pages (site), Render free web service (API), plus a GitHub Actions keep-alive ping
+
+---
+
+## Repository structure
+
+| File | Purpose |
+|---|---|
+| `chat.py` | FastAPI app: chat endpoint, constraint parsing, auth, history, schedule selection, analytics API, background retraining |
+| `builder.py` | `ScheduleBuilder` – generates every valid timetable under the hard constraints |
+| `optimizer.py` | `ScheduleOptimizer` – scores and ranks timetables by the seven criteria |
+| `analytics_pipeline_final.py` | ML training pipeline; can also be run from the command line |
+| `simulate_sessions.py`, `upload_simulation.py` | Generate the simulated demo sessions and load them into Supabase (with rollback) |
+| `build_checkpoint_report_doc.py`, `build_analytics_summary_doc.py` | Generate the Hebrew Word reports of the training runs |
+| `index.html`, `login.html`, `register.html`, `dashboard.html`, `profile.html`, `analytics.html`, `about.html` | Frontend pages |
+| `config.js` | Chooses the API address: localhost when run locally, Render when served from GitHub Pages |
+| `render.yaml` | Render blueprint for the API service |
+| `supabase_security.sql` | Enables row-level security, so tables are reachable only through the server |
+| `DEPLOY.md` | Step-by-step free deployment guide (Hebrew) |
+| `SCHEDULING_ENGINE_CHANGES.md`, `CHANGELOG.md` | Engineering notes on the scheduling engine |
+
+---
+
+## Running locally
+
+```bash
+pip install -r requirements.txt
+```
+
+Create a `.env` file:
+
+```
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_KEY=<server-side secret key>
+# optional
+USE_GEMINI=false
+GEMINI_API_KEY=
+```
+
+Start the server and open the site:
+
+```bash
+python -m uvicorn chat:app --reload --port 8000
+```
+
+Then open `index.html` in a browser. `config.js` points the pages at `http://localhost:8000` automatically.
+
+Retrain the model manually. This trains on the database and saves a new run, which can become the active model:
+
+```bash
+python analytics_pipeline_final.py
+```
+
+To see the models trained at every 100 choices without writing anything to the database:
+
+```bash
+python analytics_pipeline_final.py --checkpoints
+```
+
+---
+
+## Team
+
+אופק נתנאל · אור כהן · רותם ברק · מידן מינצס
