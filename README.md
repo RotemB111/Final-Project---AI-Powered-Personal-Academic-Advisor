@@ -21,6 +21,7 @@ Final project for a B.Sc. in Industrial Engineering and Management. The interfac
 - **Dataset and database design:** prepared the project's dataset and designed the relationships between the tables (students, programs, courses, course offerings, semester templates, chat sessions and constraints).
 - **Constraint design:** defined which scheduling constraints students can choose and what each one means, which set the scope of what the system supports.
 - **Constraint implementation:** wrote the code that puts the constraints into effect, translating each constraint from the chat into the rules the schedule builder and optimizer apply.
+- **Schedule ranking function:** built the main scoring function that decides which schedule is better, combining the seven criteria into one weighted score, and set the initial weights for each criterion before any learning.
 
 ---
 
