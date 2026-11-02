@@ -131,12 +131,17 @@ class ScheduleBuilder:
         if not raw_day:
             return -1
         d = str(raw_day).lower().strip()
-        if "ראשון" in d or "sun" in d or d == "1" or "א" in d: return 1
-        if "שני" in d or "mon" in d or d == "2" or "ב" in d: return 2
-        if "שלישי" in d or "tue" in d or d == "3" or "ג" in d: return 3
-        if "רביעי" in d or "wed" in d or d == "4" or "ד" in d: return 4
-        if "חמישי" in d or "thu" in d or d == "5" or "ה" in d: return 5
-        if "שישי" in d or "fri" in d or d == "6" or "ו" in d: return 6
+        # Full names first. Single Hebrew letters only when they stand alone ("ב", "יום ב'"),
+        # otherwise "רביעי" would match "ב" and be read as Monday.
+        if "ראשון" in d or "sun" in d or d == "1": return 1
+        if "שלישי" in d or "tue" in d or d == "3": return 3
+        if "רביעי" in d or "wed" in d or d == "4": return 4
+        if "חמישי" in d or "thu" in d or d == "5": return 5
+        if "שישי" in d or "fri" in d or d == "6": return 6
+        if "שני" in d or "mon" in d or d == "2": return 2
+        letter = re.fullmatch(r"(?:יום\s*)?([אבגדהו])['\"׳]?", d)
+        if letter:
+            return "אבגדהו".index(letter.group(1)) + 1
         return -1
 
     def _print_schedules(self, schedules, course_metadata, title="תוצאות הבילדר"):
