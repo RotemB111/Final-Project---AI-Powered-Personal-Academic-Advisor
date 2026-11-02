@@ -16,6 +16,14 @@ Final project for a B.Sc. in Industrial Engineering and Management. The interfac
 
 ---
 
+## My role (Rotem Barak)
+
+- **Dataset and database design:** prepared the project's dataset and designed the relationships between the tables (students, programs, courses, course offerings, semester templates, chat sessions and constraints).
+- **Constraint design:** defined which scheduling constraints students can choose and what each one means, which set the scope of what the system supports.
+- **Constraint implementation:** wrote the code that puts the constraints into effect, translating each constraint from the chat into the rules the schedule builder and optimizer apply.
+
+---
+
 ## What it does
 
 1. **The student describes what they want** – e.g. *"תבנה לי מערכת בלי ימי שני, לא לפני 10:00, עם כמה שפחות חלונות"* ("build me a schedule without Mondays, not before 10:00, with as few gaps as possible").
