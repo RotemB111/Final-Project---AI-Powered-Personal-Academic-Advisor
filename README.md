@@ -12,7 +12,7 @@ A chat-based assistant that builds a student's semester timetable from plain-lan
 
 > The server runs on Render's free tier and sleeps when idle, so the first request can take up to a minute.
 
-Built as a university final project. The interface is in Hebrew.
+Final project for a B.Sc. in Industrial Engineering and Management. The interface is in Hebrew.
 
 ---
 
