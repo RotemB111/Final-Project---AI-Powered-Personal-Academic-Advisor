@@ -49,6 +49,7 @@
         .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; background: var(--primary-light); color: var(--primary-dark); font-size: .8rem; font-weight: 600; }
         .table-scroll { overflow-x: auto; }
         details { margin-top: 10px; font-size: .85rem; color: var(--text-secondary); }
+        .subhead { font-size: .95rem; font-weight: 600; color: var(--text-secondary); margin: 6px 0 8px; }
         .status { padding: 40px; text-align: center; color: var(--text-secondary); }
     </style>
 </head>
@@ -98,6 +99,22 @@
         </div>
 
         <section class="card" style="margin-bottom:18px">
+            <h2>האילוצים שסטודנטים בחרו</h2>
+            <p class="hint" id="constraintsSummary"></p>
+            <div class="grid2" style="margin-bottom:0">
+                <div>
+                    <h3 class="subhead">לפי סוג אילוץ</h3>
+                    <div class="chart-box" id="constraintTypeBox"><canvas id="constraintTypeChart" aria-label="כמות אילוצים לפי סוג"></canvas></div>
+                </div>
+                <div>
+                    <h3 class="subhead">כמה אילוצים בכל סשן</h3>
+                    <div class="chart-box" style="height:240px"><canvas id="constraintCountChart" aria-label="מספר אילוצים בסשן"></canvas></div>
+                </div>
+            </div>
+            <details><summary>הצג כטבלה</summary><div class="table-scroll"><table class="data" id="constraintsTable"></table></div></details>
+        </section>
+
+        <section class="card" style="margin-bottom:18px">
             <h2>במה החלופה שנבחרה שונה מהחלופות שלא נבחרו</h2>
             <p class="hint">ממוצע הקנס לכל קריטריון (0 = הכי טוב). פער גדול = הקריטריון מבדיל בין מה שסטודנטים בוחרים למה שהם דוחים.</p>
             <div class="legend"><span style="--c:var(--series-1)">חלופה שנבחרה</span><span style="--c:var(--series-2)">חלופה שלא נבחרה</span></div>
@@ -122,6 +139,15 @@
     const CRITERIA_HE = {
         G: "חלונות", D: "ימי לימוד", LD: "עומס יומי", T: "העדפת שעות",
         LW: "איזון שבועי", C: "עומס הערכה", A: "נוכחות חובה"
+    };
+    const CONSTRAINT_HE = {
+        day_off: "יום חופשי", time_range: "טווח שעות", windows_minimization: "צמצום חלונות",
+        lecturer_constraint: "העדפת מרצה", study_days_limit: "הגבלת ימי לימוד",
+        course_drop_flexibility: "גמישות בהורדת קורס", daily_load: "עומס יומי",
+        course_modification: "הוספה/הסרה של קורס", course_schedule_pref: "העדפת מועד לקורס",
+        weekly_balance: "איזון שבועי", max_consecutive_hours: "מקסימום שעות רצופות",
+        min_daily_hours: "מינימום שעות ביום", credit_range: "טווח נקודות זכות",
+        assessment_preference: "העדפת סוג הערכה"
     };
     const css = name => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(name).trim();
     const fmt = (v, d = 3) => v === null || v === undefined ? "–" : Number(v).toFixed(d);
@@ -236,6 +262,26 @@
 
         const kinds = [s.labeled, s.unlabeled, s.single_alternative];
         singleHBar('dataChart', ['בחירה אמיתית', 'בלי בחירה', 'חלופה אחת בלבד'], kinds, v => `${v} (${pct(v, s.total)})`);
+
+        const c = d.constraints;
+        if (c) {
+            const sessionsWith = s.total - c.per_session["0"];
+            document.getElementById('constraintsSummary').textContent =
+                `${c.total.toLocaleString('he-IL')} אילוצים מ-${c.students_with.toLocaleString('he-IL')} סטודנטים · ` +
+                `${pct(sessionsWith, s.total)} מהסשנים כללו לפחות אילוץ אחד · ממוצע ${fmt(c.avg_per_session, 1)} אילוצים לסשן`;
+            const types = Object.keys(c.by_type);
+            const typeCounts = types.map(t => c.by_type[t]);
+            document.getElementById('constraintTypeBox').style.height = `${Math.max(160, 38 * types.length + 40)}px`;
+            singleHBar('constraintTypeChart', types.map(t => CONSTRAINT_HE[t] || t), typeCounts, v => `${v} (${pct(v, c.total)})`);
+            const buckets = ["0", "1", "2", "3", "4+"];
+            const bucketCounts = buckets.map(b => c.per_session[b]);
+            const bucketLabels = { "0": "ללא אילוצים", "1": "אילוץ אחד", "2": "2 אילוצים", "3": "3 אילוצים", "4+": "4 ומעלה" };
+            singleHBar('constraintCountChart', buckets.map(b => bucketLabels[b]),
+                bucketCounts, v => `${v} (${pct(v, s.total)})`);
+            document.getElementById('constraintsTable').innerHTML =
+                `<tr><th>סוג אילוץ</th><th>כמות</th><th>אחוז</th></tr>` +
+                types.map((t, i) => `<tr><td>${CONSTRAINT_HE[t] || t}</td><td>${typeCounts[i]}</td><td>${pct(typeCounts[i], c.total)}</td></tr>`).join('');
+        }
 
         groupedBar('scoresChart',
             CRITERIA.map(k => d.avg_scores.selected[k]),

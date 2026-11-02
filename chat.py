@@ -2914,6 +2914,26 @@ def _build_analytics():
                         for k in CRITERIA_KEYS},
         }
 
+    # Constraints the students asked for, per type and per session (sessions that built schedules).
+    constraint_rows = [r for r in _fetch_all_rows('studentconstraint', "session_id,student_id,constraint_type,active")
+                       if r.get("active")]
+    by_type, per_session = {}, {}
+    for r in constraint_rows:
+        by_type[r["constraint_type"]] = by_type.get(r["constraint_type"], 0) + 1
+        per_session[r["session_id"]] = per_session.get(r["session_id"], 0) + 1
+    count_buckets = {"0": 0, "1": 0, "2": 0, "3": 0, "4+": 0}
+    for session_id in sessions:
+        c = per_session.get(session_id, 0)
+        count_buckets["4+" if c >= 4 else str(c)] += 1
+    built_constraint_total = sum(per_session.get(sid, 0) for sid in sessions)
+    constraints = {
+        "total": len(constraint_rows),
+        "students_with": len({r["student_id"] for r in constraint_rows}),
+        "by_type": dict(sorted(by_type.items(), key=lambda kv: -kv[1])),
+        "per_session": count_buckets,
+        "avg_per_session": round(built_constraint_total / len(sessions), 2) if sessions else None,
+    }
+
     active = next((_run(r) for r in reversed(runs) if r.get("is_best_run")), None)
     students = supabase.table('students').select('student_id', count='exact').limit(1).execute().count
 
@@ -2923,6 +2943,7 @@ def _build_analytics():
         "sessions": counts,
         "selected_alternative": selected_alt,
         "avg_scores": avg_scores,
+        "constraints": constraints,
         "retrain": {"step": ml_pipeline.CHECKPOINT_STEP, "new_labeled_since_last_run": new_labeled, "last_run_at": last_run_at},
         "active_model": active,
         "default_weights": DEFAULT_CRITERION_WEIGHTS,
